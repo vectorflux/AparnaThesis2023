@@ -22,24 +22,30 @@ class Search:
         return closest_indices[1:]  # first point is "i" itself, so skip it
 
 
-def find_neighbors(myradius):#radius passed as argument
+def find_neighbors(myradius,xy):#radius passed as argument
 
     atlas.initialize()
 
     #resolution = 100 * km / earth_radius
     resolution = myradius
-    grid = atlas.Grid("H128")
+    #grid = atlas.Grid("H128")
+
+    grid = atlas.UnstructuredGrid(xy[:, 0], xy[:, 1])
 
     ###Create FunctionSpace
-    functionspace = atlas.functionspace.PointCloud(grid, halo_radius=resolution * 2, geometry="UnitSphere")
+    functionspace = atlas.functionspace.PointCloud(grid, levels=100, halo_radius=resolution * 2, geometry="UnitSphere")
 
+    n = functionspace.size
     search = Search(functionspace)
     radius = resolution
-    index = 0
-    nearest = search.nearest_indices_within_radius(index, radius)
-    if functionspace.part == 0:
-        print("nearest global indices to local index", index, " ( global index", global_index[index], "): ",
+    #indices = np.zeros([n,n])
+
+    for id in range(functionspace.size):
+        if ghost[id] == 0:
+            nearest = search.nearest_indices_within_radius(id, radius)
+            print("nearest global indices to local index", id, " ( global index", global_index[id], "): ",
               [global_index[n] for n in nearest])
+
 
     atlas.finalize()
 
