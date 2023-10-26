@@ -5,7 +5,7 @@ import math
 
 def read_data_netcdf():
 
-    f = nc.Dataset('/users/ldevulap/GRID_FILES/grid.nc')
+    f = nc.Dataset('/users/ldevulap/MyThesis2023/projectrbf/GRID_FILES/grid.nc')
     #print(f.variables.keys())
 
 
