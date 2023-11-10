@@ -38,7 +38,7 @@ def create_neighborhood(r, coords, my_i):
         #A = constructa(sub_coords)
         #print('Matrix A:', A)
 
-        #cnd = linalg.cond(A)
+        cnd = linalg.cond(A)
         #print('Condition number of A ', cnd)
 
         #InvA = inverta(A)

@@ -2,7 +2,7 @@ import atlas4py as atlas
 import math
 import numpy as np
 
-atlas.initialize() #initializes atlas and MPI
+#atlas.initialize() #initializes atlas and MPI
 
 # constants
 earth_radius = 6371229.
@@ -23,28 +23,13 @@ class Search:
 
 
 
-class fields:
-    def __init__(self, functionspace):
-        self.functionspace = functionspace
-        self.lonlat = atlas.make_view(self.functionspace.lonlat)
-        self.fields = atlas.make_view(self.functionspace.fields)
-
-        #u, v, w, h
-
-
-
-
 def find_neighbors(myradius,functionspace):#radius passed as argument
 
     n_p = functionspace.size
-    search = Search(functionspace)
 
-    for id in range(functionspace.size): #n_p
-        if ghost[id] == 0:
-            nearest = search.nearest_indices_within_radius(id, myradius)
-            #print("nearest global indices to local index", id, " ( global index", global_index[id], "): ",
+
+    #print("nearest global indices to local index", id, " ( global index", global_index[id], "): ",
             #  [global_index[n] for n in nearest])
-
 
     return nearest
 

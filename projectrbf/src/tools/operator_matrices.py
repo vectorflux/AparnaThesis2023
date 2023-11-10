@@ -51,14 +51,15 @@ def projection(coords, list):
 
     return p
 
-def differentiation (coords, inv_A ,Xk):
+def differentiation (inv_A,coords,id,nearest):
 
     # B = [ xj.(Xj*.Xk) -xk ]*{phi'(r(Xj))/r(Xj)}
-    # index j : iterates over all the list of subdomain
-    # index k : index of the node where the calculation is being done
-
+    # coords = entire list of coordinates
+    # id = j aka local index of the point being evaluated
     # D = B * inv_A
-    n = len(coords)
+    #Need to recheck the variables and update the code
+
+    n = len(nearest)
     Bx = np.empty(n)
     By = np.empty(n)
     Bz = np.empty(n)
@@ -66,7 +67,7 @@ def differentiation (coords, inv_A ,Xk):
     ### Loops for Bx By Bz
 
     for j in range(n):
-        r_x = eucl_norm(coords[j],Xk)
+        r_x = eucl_norm(coords[nearest[j]],coords[id])
         phi_p = wendland0_prime(r_x)
 
         #print('xj:', coords[j,0])
@@ -94,6 +95,8 @@ def differentiation (coords, inv_A ,Xk):
     print('Dy: ', Dy)
     print('Dz: ', Dz)
 
+
+    return Dx, Dy, Dz
 
 
 

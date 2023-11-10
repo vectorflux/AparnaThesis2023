@@ -14,19 +14,9 @@ def getsubdomain(my_list, coords):
 def eucl_norm(x1,x2):
     return np.linalg.norm(x1-x2)
 
-def constructa(neighbors,xyz):
+def constructa(neigh_indices,coords):
 
-    #input coordinates(xyz)
-
-    #iterates over each row of allindices
-    fullsize = len(allindices)
-    all_invA = np.zeros(np.shape(allindices))
-
-
-
-    for id in range(fullsize):
-        coords = np.trim_zeros(allindices[id],'b')
-        n = len(coords) #gets the size of the matrix
+        n = len(neigh_indices) #gets the size of the matrix
         A = np.zeros((n, n))  #declares a matrix with zeros for our interpolant matrix A
 
         # diagonal elements
@@ -37,15 +27,15 @@ def constructa(neighbors,xyz):
         for i in range(n):
             for k in range(n):
                 if k < i :
-                    r = eucl_norm(coords[i],coords[k]) #sends two tuples and gets the norm back
+                    r = eucl_norm(coords[neigh_indices[i]],coords[neigh_indices[k]) #sends two tuples and gets the norm back
                     #print(r)
                     A[i][k] = wendland0(r)
                     A[k][i] = A[i][k]
 
         invA = inverta(A)
-        all_invA = np.vstack(A)
 
-    return all_invA
+
+    return invA
 
 def inverta(A):
 
