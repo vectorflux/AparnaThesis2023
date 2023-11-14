@@ -16,26 +16,32 @@
 
 
 import atlas4py as atlas
-import math
 import numpy as np
-from projectrbf.src.tools import *
-from projectrbf.src.atlas.atlas_func_interface import *
+from MyThesis2023.projectrbf.src.tools.A_matrices import *
+from MyThesis2023.projectrbf.src.tools.operator_matrices import *
+from MyThesis2023.projectrbf.src.tools.atlas_func_interface import *
+from MyThesis2023.projectrbf.src.tools.read_netcdf_file import *
 
 
 atlas.initialize() #initializes atlas and MPI
 
-resolution = 0.065 #can generalize later
 
-#Read data from a netcdf file
-xyz, lonlat = read_data_netcdf()
+#Constants and Variables
+myradius = 0.065 #can generalize later
+allA = []
+allinvA = []
+nrj_size_list = []
+allnearest = []
+allDx = []
+allDy = []
+allDz = []
 
-#Create Unstructured Grid
-grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1])
+lonlat = read_data_netcdf() #Read data from a netcdf file
+grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
-#Create functionspace + partitioning
-functionspace = atlas.functionspace.PointCloud(grid, halo_radius=resolution * 2, geometry="UnitSphere")
+#Create functionspace + partitioning #levels in the pointcloud implementation
+functionspace = atlas.functionspace.PointCloud(grid, halo_radius=myradius * 2, geometry="UnitSphere")
 
-#levels in the pointcloud implementation
 
 
 ###Access fields as numpy arrays, if needed
@@ -45,53 +51,63 @@ partition = atlas.make_view(functionspace.partition) #partition owning point (0-
 remote_index = atlas.make_view(functionspace.remote_index) # local index on partition owning point (careful, 1-based when atlas_HAVE_FORTRAN)
 global_index = atlas.make_view(functionspace.global_index) # global index across partitions (always 1-based)
 
-#field = functionspace.create_field(name="mycoords",variables=3,levels = 10, dtype = np.float64)
-field = functionspace.create_field(name="mycoords",variables=3,levels = 10, dtype = np.float64)
-xyz = atlas.make_view(field)
 xyz = getcartesian(lonlat)
-
-x = xyz[:,0]
-
-field = functionspace.create_field(name="velocity", variables=3,levels = 10, dtype = np.float64)
-uvw = atlas.make_view(field)
-
-u = uvw[:,0]
-
+###Create Fields
 #first dimension - size of the functionspace
 #second dimension - number of variables
 
+#field = functionspace.create_field(name="mycoords",variables=3,levels = 10, dtype = np.float64)
+
+myfield = functionspace.create_field(name="swe_variables", variables=4, dtype = np.float64)
+uvwh = atlas.make_view(myfield)
+u = uvwh[:,0]
+v = uvwh[:,1]
+w = uvwh[:,2]
+h = uvwh[:,3]
+
 ### FINDING NEIGHBORS + INITIALIZATION
 
-allnearest = np.zeros([n_p, 50])
 n_p = functionspace.size
 search = Search(functionspace) #initializes the Search class with functionspace
-radius = resolution
-
 
 #loops over all the points in the subdomain
 #each function will work on one j at a time
 #Big initialization loop
+
 for id in range(n_p):  # n_p
     if ghost[id] == 0:
 
-        xyz[id]
         #nearest = find_neighbors(radius,functionspace) #nearest gives set of local indices
-
-
         nearest = search.nearest_indices_within_radius(id, myradius)
         allnearest[id] = nearest
+        nrj_size_list = np.append(nrj_size_list, len(nearest))
+        xyz_r = getneighcoords(nearest, xyz) #Gets the list of neighborhood coordinates for further use
 
-        #call function to create Ainverse
 
-        invA = constructA(nearest,xyz)
+        #call function to create A, A inverse and save them
+        A, invA = constructA(xyz_r)
+        allA = np.append(allA,A)
+        allinvA = np.append(allinvA,invA)
+
 
         #call function to create D
-
-        Dx, Dy, Dz = differentiation(invA,xyz,id,nearest)
-
+        Xj = xyz[id]
+        Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
+        allDx = np.append(allDx,Dx)
+        allDy = np.append(allDy, Dy)
+        allDz = np.append(allDz, Dz)
 
         # call function to  initialize fields
-        init_points(Dx, Dy, Dz)
+allD = np.column_stack(allDx, allDy, allDz)
+
+Ru, Rv, Rw, Rh = construct_rhs(uvwh,allD,xyz, nrj_size_list)
+
+
+
+#Get all As
+#Get all Ds
+
+
 
 
     # stage 1 : Get all A inverses and all D matrices

@@ -1,4 +1,5 @@
 import atlas4py as atlas
+from operator_matrices import *
 
 class fields:
     def __init__(self, functionspace):
@@ -9,9 +10,19 @@ class fields:
         #u, v, w, h
 
 
+def initialize_fields(uvwh):
 
-def init_points(Dx,Dy,Dz):
 
 
+
+def construct_rhs(uvwh, allD,xyz,nrj_size_list):
+
+    px, py, pz = projection(xyz_r)
+
+    Ru =
+
+    Rv =
+
+    Rz =
 
 

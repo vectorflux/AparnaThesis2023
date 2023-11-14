@@ -20,3 +20,9 @@ def getcartesian(lonlat):
 
 def eucl_norm(x1,x2):
     return np.linalg.norm(x1-x2)
+
+def getneighcoords(my_list, coords):
+    xyz_r = np.zeros([len(my_list),3])
+    xyz_r[:] = coords[my_list[:]]
+
+    return xyz_r

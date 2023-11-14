@@ -39,6 +39,6 @@ def read_data_netcdf():
 
     coordxyz = np.column_stack([x,y,z])
 
-    return coordxyz, lonlat
+    return lonlat
 
 
