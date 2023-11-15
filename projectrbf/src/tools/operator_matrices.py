@@ -54,16 +54,18 @@ def differentiation (inv_A,xyz_r,Xj):
     Bz = np.zeros(n)
     r_x = np.zeros(n)
     mult_constant = np.empty(n)
-
-    r_x[:] = eucl_norm(xyz_r[:],Xj)
-    mult_constant[:] = wendland0_prime(r_x[:]) / r_x[:]
+    
+    for i in range(n):
+        r_x[i] = eucl_norm(xyz_r[i],Xj)
+        mult_constant[i] = wendland0_prime(r_x[i]) / r_x[i]
 
     ## Dimensions ##
 
+
     #[1,nrj] = ([1,1]*(np.matmul([1,3],[3,nrj]) - [1,nrj]) * [1,nrj]
-    Bx[:] = (Xj[0]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,0]))*mult_constant[:]
-    By[:] = (Xj[1]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,1]))*mult_constant[:]
-    Bz[:] = (Xj[2]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,2]))*mult_constant[:]
+    Bx[:] = (Xj[0]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,0])))*mult_constant[:]
+    By[:] = (Xj[1]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,1])))*mult_constant[:]
+    Bz[:] = (Xj[2]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,2])))*mult_constant[:]
 
     ## OLD 2 ## Bx[:] = (xyz_r[:,0]*(np.dot(xyz_r[j],np.transpose(Xj))) - Xj[0])*mult_constant[:]
 

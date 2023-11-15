@@ -13,7 +13,7 @@ def getcartesian(lonlat):
     y = R * np.cos(lat) * np.sin(lon)
     z = R * np.sin(lat)
 
-    xyz = np.column_stack(x,y,z)
+    xyz = np.column_stack([x,y,z])
 
     return xyz
 

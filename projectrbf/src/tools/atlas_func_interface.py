@@ -13,7 +13,7 @@ class Search:
         self.functionspace = functionspace
         self.lonlat = atlas.make_view(self.functionspace.lonlat)
         self.kdtree = atlas.IndexKDTree(geometry="UnitSphere")
-        self.kdtree.build(lonlat)
+        self.kdtree.build(self.lonlat)
 
     def nearest_indices_within_radius(self, i, radius):
         # radius is in metres on Earth geometry
@@ -22,16 +22,6 @@ class Search:
         return closest_indices[1:]  # first point is "i" itself, so skip it
 
 
-
-def find_neighbors(myradius,functionspace):#radius passed as argument
-
-    n_p = functionspace.size
-
-
-    #print("nearest global indices to local index", id, " ( global index", global_index[id], "): ",
-            #  [global_index[n] for n in nearest])
-
-    return nearest
 
 #def update_fields(self,):
 

@@ -14,7 +14,7 @@ import math
 
 def read_data_netcdf():
 
-    f = nc.Dataset('/home/dlaparna/thesis/projectrbf/GRID_FILES/grid.nc')
+    f = nc.Dataset('/users/ldevulap/MyThesis2023/projectrbf/GRID_FILES/grid.nc')
     #print(f.variables.keys())
 
 
@@ -35,7 +35,7 @@ def read_data_netcdf():
     y = R * np.cos(lat) * np.sin(lon)
     z = R * np.sin(lat)
 
-    lonlat = np.column_stack([lon.lat])
+    lonlat = np.column_stack([lon,lat])
 
     coordxyz = np.column_stack([x,y,z])
 

@@ -1,3 +1,4 @@
+
 import numpy as np
 import scipy.linalg as scp
 import numpy.linalg as linalg
@@ -25,7 +26,7 @@ def constructA(xyz_r):
                     A[k][i] = A[i][k]
 
         invA = inverta(A)
-
+        nrj = n*n
         np.reshape(A, (1,nrj))
         np.reshape(invA, (1,nrj))
 

@@ -50,3 +50,12 @@ def wendland0_prime(r):
     else:
         phi_p = 0
     return phi_p
+
+
+def wendland1_prime(r):
+
+    if (r <= 1):
+        phi_p = -16*(r**3) + 33*(r**2) - 18*r +1
+    else:
+        phi_p = 0
+    return phi_p
