@@ -35,6 +35,9 @@ allnearest = []
 allDx = []
 allDy = []
 allDz = []
+allpx = []
+allpy = []
+allpz = []
 
 lonlat = read_data_netcdf() #Read data from a netcdf file
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
@@ -97,7 +100,13 @@ for id in range(n_p):  # n_p
         allDy = np.append(allDy, Dy)
         allDz = np.append(allDz, Dz)
 
+        px, py, pz = projection(xyz_r)
+        allpx = np.append(allpx, px)
+        allpy = np.append(allpy, py)
+        allpz = np.append(allpz, pz)
+
         # call function to  initialize fields
+
 allD = np.column_stack(allDx, allDy, allDz)
 
 Ru, Rv, Rw, Rh = construct_rhs(uvwh,allD,xyz, nrj_size_list)
