@@ -19,6 +19,7 @@
 #!/usr/bin/env python3
 import atlas4py as atlas
 import numpy as np
+import time
 
 from operator_matrices import *
 from atlas_func_interface import *
@@ -26,6 +27,7 @@ from read_netcdf_file import *
 from A_matrices import *
 from initializefields import *
 
+start = time.time()
 atlas.initialize() #initializes atlas and MPI
 
 
@@ -79,10 +81,10 @@ n_p = functionspace.size
 search = Search(functionspace) #initializes the Search class with functionspace
 
 
-Ru = np.zeros(len(n_p))
-Rv = np.zeros(len(n_p))
-Rw = np.zeros(len(n_p))
-Rh = np.zeros(len(n_p))
+#Ru = np.zeros(len(n_p))
+#Rv = np.zeros(len(n_p))
+#Rw = np.zeros(len(n_p))
+#Rh = np.zeros(len(n_p))
 
 
 #loops over all the points in the subdomain
@@ -161,14 +163,18 @@ allP = np.column_stack([allpx, allpy, allpz])
 
 
 #function to initialize fields
-uvwh = set_initial_conditions(uvwh, xyz, n_p)
+uvwh = set_initial_conditions(uvwh, xyz, n_p, ghost)
 
-field.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
-field.halo_exchange()
+myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+myfield.halo_exchange()
+vt = validate_halo_exchange(uvwh, xyz, n_p,ghost)
+print("Halo exchange passed with vt = ", vt)
 
-validate_halo_exchange(uvwh, xyz, n_p)
-print("Halo exchange passed")
+print("uvwh values are:\n" , uvwh )
+
+
 #function to create rhsd matrix
+
 
 #function to create rhs for u,v,w,h
 
@@ -191,6 +197,9 @@ print("Halo exchange passed")
 
 atlas.finalize()
 
+end = time.time()
+
+print("Time elapsed: ", end-start, "seconds" )
 
 
 

@@ -72,7 +72,7 @@ def initialize_fields(uvwh, n_p, ic_type = "case_6"):
 
 #def construct_rhsd():
 
-def set_initial_conditions(uvwh, xyz, n_p):
+def set_initial_conditions(uvwh, xyz, n_p, ghost):
 
     x = xyz[:,0]
     y = xyz[:,1]
@@ -93,9 +93,12 @@ def set_initial_conditions(uvwh, xyz, n_p):
 
     return uvwh
 
-def validate_halo_exchange(uvwh,xyz, n_p):
-
+def validate_halo_exchange(uvwh,xyz, n_p,ghost):
+    vt = 1
     for n in range(n_p):
         if ghost[n]:
             if (uvwh[n,3] != 4*(xyz[n,0]**2 +xyz[n,1]**2 +xyz[n,2]**2)):
                 print("Halo exchange failed")
+                vt = 0
+
+    return vt
