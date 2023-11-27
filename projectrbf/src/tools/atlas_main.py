@@ -126,7 +126,7 @@ allD = np.column_stack([allDx, allDy, allDz])
 allP = np.column_stack([allpx, allpy, allpz])
 
 #print("max of nrj size list : ", np.max(nrj_size_list))
-#print("allDs are : ", allD)
+#print("allnearest : ", allnearest)
 #print("allinvA|size : " ,len(allinvA), "\n", allinvA)
 #print("all Px |size:", len(allpx), "\n", allpx )
 #print("all Py |size:", len(allpy), "\n", allpy )
@@ -170,16 +170,19 @@ myfield.halo_exchange()
 vt = validate_halo_exchange(uvwh, xyz, n_p,ghost)
 print("Halo exchange passed with vt = ", vt)
 
-print("uvwh values are:\n" , uvwh )
+#print("uvwh values are:\n" , uvwh )
 
 
 #function to create rhsd matrix
+#n_p0 = len(nrj_size_list)
+#rhsd = construct_rhsd(nrj_size_list)
 
 
 #function to create rhs for u,v,w,h
 
-#Ru, Rv, Rw, Rh = construct_rhs(uvwh,allD, allP,xyz, nrj_size_list)
+Rh, Ru, Rv, Rw = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
 
+print("Ru:",Ru, "\nRv:",Rv, "\nRw:",Rw, "\nRh:",Rh )
 
 #Time loop
 
@@ -187,9 +190,9 @@ print("uvwh values are:\n" , uvwh )
 
     #Update values (Halo exchange)
 
+    #Calculate rhsd with new values
 
-
-
+    
     #Calculate uvwh at next timestep : need all RHS values
 
 
