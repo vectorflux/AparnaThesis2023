@@ -14,6 +14,8 @@
 #   8. Run Test Cases
 #   9. Publish Results
 
+#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
+
 #!/usr/bin/env python3
 import atlas4py as atlas
 import numpy as np
@@ -22,6 +24,7 @@ from operator_matrices import *
 from atlas_func_interface import *
 from read_netcdf_file import *
 from A_matrices import *
+from initializefields import *
 
 atlas.initialize() #initializes atlas and MPI
 
@@ -38,6 +41,8 @@ allDz = []
 allpx = []
 allpy = []
 allpz = []
+
+
 
 lonlat = read_data_netcdf() #Read data from a netcdf file
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
@@ -63,15 +68,22 @@ xyz = getcartesian(lonlat)
 
 myfield = functionspace.create_field(name="swe_variables", variables=4, dtype = np.float64)
 uvwh = atlas.make_view(myfield)
-u = uvwh[:,0]
-v = uvwh[:,1]
-w = uvwh[:,2]
-h = uvwh[:,3]
+#u = uvwh[:,0]
+#v = uvwh[:,1]
+#w = uvwh[:,2]
+#h = uvwh[:,3]
 
 ### FINDING NEIGHBORS + INITIALIZATION
 
 n_p = functionspace.size
 search = Search(functionspace) #initializes the Search class with functionspace
+
+
+Ru = np.zeros(len(n_p))
+Rv = np.zeros(len(n_p))
+Rw = np.zeros(len(n_p))
+Rh = np.zeros(len(n_p))
+
 
 #loops over all the points in the subdomain
 #each function will work on one j at a time
@@ -96,7 +108,7 @@ for id in range(n_p):  # n_p
         #call function to create D
         Xj = xyz[id]
         Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
-        allDx = np.append(allDx,Dx)
+        allDx = np.append(allDx, Dx)
         allDy = np.append(allDy, Dy)
         allDz = np.append(allDz, Dz)
 
@@ -105,12 +117,15 @@ for id in range(n_p):  # n_p
         allpy = np.append(allpy, py)
         allpz = np.append(allpz, pz)
 
-        # call function to  initialize fields
 
+
+# call function to  initialize fields
 allD = np.column_stack([allDx, allDy, allDz])
+allP = np.column_stack([allpx, allpy, allpz])
+
 #print("max of nrj size list : ", np.max(nrj_size_list))
 #print("allDs are : ", allD)
-print("allinvA|size : " ,len(allinvA), "\n", allinvA)  
+#print("allinvA|size : " ,len(allinvA), "\n", allinvA)
 #print("all Px |size:", len(allpx), "\n", allpx )
 #print("all Py |size:", len(allpy), "\n", allpy )
 #print("all Pz |size:", len(allpz), "\n", allpz )
@@ -144,6 +159,32 @@ print("allinvA|size : " ,len(allinvA), "\n", allinvA)
 #########################################################
 
 
+
+#function to initialize fields
+uvwh = set_initial_conditions(uvwh, xyz, n_p)
+
+field.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+field.halo_exchange()
+
+validate_halo_exchange(uvwh, xyz, n_p)
+print("Halo exchange passed")
+#function to create rhsd matrix
+
+#function to create rhs for u,v,w,h
+
+#Ru, Rv, Rw, Rh = construct_rhs(uvwh,allD, allP,xyz, nrj_size_list)
+
+
+#Time loop
+
+#for i in range(n_timesteps):
+
+    #Update values (Halo exchange)
+
+
+
+
+    #Calculate uvwh at next timestep : need all RHS values
 
 
 
