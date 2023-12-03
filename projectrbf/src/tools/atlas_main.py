@@ -183,7 +183,7 @@ print("Halo exchange passed with vt = ", vt)
 Rh, Ru, Rv, Rw = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
 
 print("Ru:",Ru, "\nRv:",Rv, "\nRw:",Rw, "\nRh:",Rh )
-
+print("******size of Ru: ", len(Ru))
 #Time loop
 
 #for i in range(n_timesteps):
