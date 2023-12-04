@@ -1,81 +1,12 @@
 import numpy as np
 from operator_matrices import *
-
-def initialize_fields(uvwh, n_p, ic_type = "case_6"):
-
-
-    if ic_type == "case_2":
-        g = 9.80616;
-        h0 = 2.94e4 / g;
-        Omega = 7.292e-5;
-        uu0 = 2 * np.pi * radius / (12 * 86400);
-        angle = 0
-        h0_fun = lambda lam, th: h0 - 1 / g * (radius * Omega * uu0 + uu0 ** 2 / 2) * (
-                    np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
-        u_fun = lambda lam, th: uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle))
-        v_fun = lambda lam, th: -uu0 * np.sin(angle) * np.sin(lam)
-
-        coriolis_fun = lambda lam, th: 2 * Omega * (
-                    np.sin(th) * np.cos(angle) - np.cos(th) * np.cos(lam) * np.sin(angle))
-    elif ic_type == "case_6":
-        g = 9.80616;
-        Omega = 7.292e-5;
-        omega = 7.848e-6;
-        K = omega;
-        h0 = 8e3;
-        R = 4
-        A_fun = lambda lam, th: 0.5 * omega * (2 * Omega + omega) * np.cos(th) ** 2 + 0.25 * K * K * np.cos(th) ** (
-                    2 * R) * ((R + 1) * np.cos(th) ** 2 + (2 * R * R - R - 2) - 2 * R * R * np.cos(th) ** (-2))
-        B_fun = lambda lam, th: 2 * (Omega + omega) * K * np.cos(th) ** R * (
-                    (R * R + 2 * R + 2) - (R + 1) ** 2 * np.cos(th) ** 2) / ((R + 1) * (R + 2))
-        C_fun = lambda lam, th: 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 - (R + 2))
-
-        h0_fun = lambda lam, th: h0 + radius * radius / g * (
-                    A_fun(lam, th) + B_fun(lam, th) * np.cos(R * lam) + C_fun(lam, th) * np.cos(2 * R * lam))
-        u_fun = lambda lam, th: radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (
-                    R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam))
-        v_fun = lambda lam, th: -radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam)
-
-        coriolis_fun = lambda lam, th: 2 * Omega * np.sin(th)
-    else:
-        raise Exception(f"Unknown initial condition type: {ic_type}")
+import math
 
 
-    for i in range(n_p):
-            local_pos_x = x_c[i] + 0.5 * hx * unif2d_x
-            local_pos_y = y_c[j] + 0.5 * hy * unif2d_y
-            local_qp_x = x_c[i] + 0.5 * hx * pts2d_x
-            local_qp_y = y_c[j] + 0.5 * hy * pts2d_y
-            h[i, j, 0, :] = h0_fun(local_pos_x, local_pos_y)
-            u[i, j, 0, :] = u_fun(local_pos_x, local_pos_y)
-            v[i, j, 0, :] = v_fun(local_pos_x, local_pos_y)
-            coriolis[i, j, 0, :] = coriolis_fun(local_qp_x, local_qp_y)
-
-
-#def construct_rhs(uvwh, allD, allP, xyz ,nrj_size_list, n_p):
-
-
- #   uvwh0, f = initialize_fields()
-
-#  RHS_D = construct_rhsd()
-
- #   Ru = -px*(RHS_D)
-
-  #  Rv = -py*(RHS_D)
-
-   # Rw = -pz*(RHS_D)
-
-    #Rh =
-
-    #return Ru, Rv, Rw, Rh
-
-
-#def construct_rhsd():
 def construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD):
     n_p0 = len(nrj_size_list)
     rhsd = np.empty(3)
     it = 0
-    tmp_xyz = np.empty(3)
     termA = np.empty(3)
     termB = np.empty(3)
     termC = np.empty(3)
@@ -89,12 +20,9 @@ def construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD):
     Rh = np.empty(n_p0)
 
     g = 9.80616
-    Omega = 7.292e-5
     f = 1.4e-3
 
     #need to get neighborhood Dnx, Dny, Dnz (saved sequentially for each point)
-
-
     def get_Dnxyz_from_allD(allD, it, k):
 
          #gives the length of nrj for the index point id
@@ -148,7 +76,7 @@ def construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD):
         Dnx, Dny, Dnz, nearest = get_Dnxyz_from_allD(allD, it,k)
         uvwh_r = get_uvwh_r(uvwh, nearest)
 
-        u = uvwh_r[:,0]
+        u = uvwh_r[:, 0]
         v = uvwh_r[:, 1]
         w = uvwh_r[:, 2]
         h = uvwh_r[:, 3]
@@ -192,16 +120,14 @@ def construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD):
         #Get px, py, pz at the node where we are calculating
         px, py, pz = getpxyz(xyz[i])
 
-        Rh[i] = ( uvwh[i, 0]*(np.dot(Dnx,h))   + uvwh[i, 1]*(np.dot(Dny,h)) + uvwh[i, 2]*(np.dot(Dnz,h)) +
+        Rh[i] = ( uvwh[i, 0]*(np.dot(Dnx,h)) + uvwh[i, 1]*(np.dot(Dny,h)) + uvwh[i, 2]*(np.dot(Dnz,h)) +
             uvwh[i,3]*(np.dot(Dnx,u) + np.dot(Dny,v)+ np.dot(Dnz,w)))
 
         Ru[i] = -np.dot(px, rhsd)
         Rv[i] = -np.dot(py, rhsd)
         Rw[i] = -np.dot(pz, rhsd)
 
-
-
-    return Rh, Ru, Rv, Rw
+    return Ru, Rv, Rw, Rh
 
 def set_initial_conditions(uvwh, xyz, n_p, ghost):
 
@@ -209,18 +135,63 @@ def set_initial_conditions(uvwh, xyz, n_p, ghost):
     y = xyz[:,1]
     z = xyz[:,2]
 
+    lam = np.empty(len(x))
+    th = np.empty(len(x))
+    az = np.empty(len(x))
+
+    lam[:] = math.sqrt(x[:]**2 + y[:]**2 + z[:]**2)
+    th[:] = np.arccos(z[:]/lam[:])
+    az[:] = np.sign(y[:])* (np.arccos(x[:]/math.sqrt(x[:]**2 +y[:]**2)))
+
+
+    radius =1.
+
+    if ic_type == "case_2":
+        g = 9.80616;
+        h0 = 2.94e4 / g;
+        Omega = 7.292e-5;
+        uu0 = 2 * np.pi * radius / (12 * 86400);
+        angle = 0
+        h0_fun = lambda lam, th: h0 - 1 / g * (radius * Omega * uu0 + uu0 ** 2 / 2) * (
+                np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
+        u_fun = lambda lam, th: uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle))
+        v_fun = lambda lam, th: -uu0 * np.sin(angle) * np.sin(lam)
+        #w_fun = lambda lam, th:
+
+        coriolis_fun = lambda lam, th: 2 * Omega * (
+                np.sin(th) * np.cos(angle) - np.cos(th) * np.cos(lam) * np.sin(angle))
+
+
+    elif ic_type == "case_6":
+        g = 9.80616;
+        Omega = 7.292e-5;
+        omega = 7.848e-6;
+        K = omega;
+        h0 = 8e3;
+        R = 4
+        A_fun = lambda lam, th: 0.5 * omega * (2 * Omega + omega) * np.cos(th) ** 2 + 0.25 * K * K * np.cos(th) ** (
+                2 * R) * ((R + 1) * np.cos(th) ** 2 + (2 * R * R - R - 2) - 2 * R * R * np.cos(th) ** (-2))
+        B_fun = lambda lam, th: 2 * (Omega + omega) * K * np.cos(th) ** R * (
+                (R * R + 2 * R + 2) - (R + 1) ** 2 * np.cos(th) ** 2) / ((R + 1) * (R + 2))
+        C_fun = lambda lam, th: 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 - (R + 2))
+
+        h0_fun = lambda lam, th: h0 + radius * radius / g * (
+                A_fun(lam, th) + B_fun(lam, th) * np.cos(R * lam) + C_fun(lam, th) * np.cos(2 * R * lam))
+        u_fun = lambda lam, th: radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (
+                R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam))
+        v_fun = lambda lam, th: -radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam)
+
+        coriolis_fun = lambda lam, th: 2 * Omega * np.sin(th)
+
+    else:
+        raise Exception(f"Unknown initial condition type: {ic_type}")
+
     for n in range(n_p):
         if not ghost[n]: #initializing all internal values
-            uvwh[n,0] = (x[n]**2 +y[n]**2 +z[n]**2)
-            uvwh[n,1] = 2*(x[n]**2 +y[n]**2 +z[n]**2)
-            uvwh[n,2] = 3*(x[n]**2 +y[n]**2 +z[n]**2)
-            uvwh[n,3] = 4*(x[n]**2 +y[n]**2 +z[n]**2)
-        else:
-            uvwh[n,0] = 0
-            uvwh[n,1] = 0
+            uvwh[n,0] = u_fun(lam[n],th[n])
+            uvwh[n,1] = v_fun(lam[n],th[n])
             uvwh[n,2] = 0
-            uvwh[n,3] = 0
-
+            uvwh[n,3] = h0_fun(lam[n],th[n])
 
     return uvwh
 
@@ -233,3 +204,76 @@ def validate_halo_exchange(uvwh,xyz, n_p,ghost):
                 vt = 0
 
     return vt
+
+def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD):
+
+    rk_u = np.ndarray([np.shape(uvwh)])
+    rk_v = np.ndarray([np.shape(uvwh)])
+    rk_w = np.ndarray([np.shape(uvwh)])
+    rk_h = np.ndarray([np.shape(uvwh)])
+
+    uvwh0 = uvwh
+
+    #*****************  k1  ******************#
+
+    ##calculation of rhs with k1 as input (which is the initial value itself)
+    rk_u[:,0], rk_v[:,0], rk_w[:,0], rk_h[:,0]  = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
+    #d1 = dt*rhs(k1)
+    rk_u[:, 0] = rk_u[:, 0] * dt
+    rk_v[:, 0] = rk_v[:, 0] * dt
+    rk_w[:, 0] = rk_w[:, 0] * dt
+    rk_h[:, 0] = rk_h[:, 0] * dt
+
+
+    #******************  k2  **************#
+
+    #k2 = uvwh0 + 0.5*d1
+    uvwh[:, 0] = uvwh0[:, 0] + (rk_u[:,0]/2)
+    uvwh[:, 1] = uvwh0[:, 1] + (rk_v[:,0]/2)
+    uvwh[:, 2] = uvwh0[:, 2] + (rk_w[:,0]/2)
+    uvwh[:, 3] = uvwh0[:, 3] + (rk_h[:,0]/2)
+
+    #calculation of rhs with k2 as input
+    rk_u[k, 1], rk_v[k, 1], rk_w[k, 1], rk_h[k, 1] = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
+
+    # d2 = dt*rhs(k2)
+    rk_u[:, 1] = rk_u[:, 1] * dt
+    rk_v[:, 1] = rk_v[:, 1] * dt
+    rk_w[:, 1] = rk_w[:, 1] * dt
+    rk_h[:, 1] = rk_h[:, 1] * dt
+
+    #*************   k3  *************#
+
+    #k3 = uvwh0 +0.5*d2
+    uvwh[:, 0] = uvwh0[:, 0] + (rk_u[:, 1]/2)
+    uvwh[:, 1] = uvwh0[:, 1] + (rk_v[:, 1]/2)
+    uvwh[:, 2] = uvwh0[:, 2] + (rk_w[:, 1]/2)
+    uvwh[:, 3] = uvwh0[:, 3] + (rk_h[:, 1]/2)
+
+    # calculation of rhs with k3 as input
+    rk_u[k, 2], rk_v[k, 2], rk_w[k, 2], rk_h[k, 2] = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
+
+    # d3 = dt*rhs(k3)
+    rk_u[:, 2] = rk_u[:, 2] * dt
+    rk_v[:, 2] = rk_v[:, 2] * dt
+    rk_w[:, 2] = rk_w[:, 2] * dt
+    rk_h[:, 2] = rk_h[:, 2] * dt
+
+    # *************   k4  *************#
+
+    #k4 = uvwh0 + d3
+    uvwh[:, 0] = uvwh0[:, 0] + (rk_u[:, 2])
+    uvwh[:, 1] = uvwh0[:, 1] + (rk_v[:, 2])
+    uvwh[:, 2] = uvwh0[:, 2] + (rk_w[:, 2])
+    uvwh[:, 3] = uvwh0[:, 3] + (rk_h[:, 2])
+
+    # calculation of rhs with k4 as input
+    rk_u[k, 3], rk_v[k, 3], rk_w[k, 3], rk_h[k, 3] = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
+
+    # d4 = dt*rhs(k4)
+    rk_u[:, 3] = rk_u[:, 3] * dt
+    rk_v[:, 3] = rk_v[:, 3] * dt
+    rk_w[:, 3] = rk_w[:, 3] * dt
+    rk_h[:, 3] = rk_h[:, 3] * dt
+
+    return rk_u, rk_v, rk_w, rk_h

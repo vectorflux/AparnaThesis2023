@@ -21,6 +21,7 @@ def create_neighborhood(r, coords, my_i):
     return list
 
 
+
 #Main Loop which iterates over all points and calls different functions
     #for id in range(coord_size):
 
@@ -51,3 +52,23 @@ def create_neighborhood(r, coords, my_i):
         #print('***End of loop ', id, '***')
 
         #end = time.time()
+def set_initial_conditions(uvwh, xyz, n_p, ghost):
+
+    x = xyz[:,0]
+    y = xyz[:,1]
+    z = xyz[:,2]
+
+    for n in range(n_p):
+        if not ghost[n]: #initializing all internal values
+            uvwh[n,0] = (x[n]**2 +y[n]**2 +z[n]**2)
+            uvwh[n,1] = 2*(x[n]**2 +y[n]**2 +z[n]**2)
+            uvwh[n,2] = 3*(x[n]**2 +y[n]**2 +z[n]**2)
+            uvwh[n,3] = 4*(x[n]**2 +y[n]**2 +z[n]**2)
+        else:
+            uvwh[n,0] = 0
+            uvwh[n,1] = 0
+            uvwh[n,2] = 0
+            uvwh[n,3] = 0
+
+
+    return uvwh
