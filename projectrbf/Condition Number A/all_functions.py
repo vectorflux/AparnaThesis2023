@@ -5,6 +5,11 @@ import numpy.linalg as linalg
 from WuWendland_functions import *
 import math
 
+def add_row(data, indices, indptr, my_list, row_values):
+    indices.extend(my_list)
+    data.extend(row_values)
+    indptr.append(len(indices))
+
 def create_neighborhood(r, coords, my_i):
     coord_size = len(coords)
     list = []
@@ -18,12 +23,29 @@ def create_neighborhood(r, coords, my_i):
                 #print('entering second if')
                 ctr+=1
                 list.append(j)
-
+            
     return list
+
+def getrow(row_id, my_list, coords):
+    xyz_r = np.zeros([len(my_list),3])
+    xyz_r[:] = coords[my_list[:]]
+
+    data = np.zeros([len(my_list)])
+    n = len(xyz_r)  # gets the size of the matrix                                                       
+    print("non-zeros in row : ", n)
+
+    # elements below and above diagonal                                                                 
+    for i in range(n):
+        r = eucl_norm(xyz_r[i], coords[row_id])  # sends two tuples and gets the norm back                    
+        data[i] = wendland0(r)
+        # print('r', r, 'data', data[i])
+
+    return data
 
 def read_data_netcdf():
 
-    f = nc.Dataset('/home/dlaparna/thesis1_git/MyThesis2023/projectrbf/GRID_FILES/grid.nc')
+    f = nc.Dataset('/Users/wsawyer/SOFTWARE/GRID_FILES/grid.nc')
+#    f = nc.Dataset('/Users/wsawyer/SOFTWARE/GRID_FILES/Global_Icos_hexNpole_2525km.nc')
     #print(f.variables.keys())
 
 
@@ -33,8 +55,8 @@ def read_data_netcdf():
     lat = clat[:]
 
     ## Convert lon lat from radians to degres. Uncomment if needed
-    lon[:] = lon[:]*(180/math.pi)
-    lat[:] = lat[:]*(180/math.pi)
+#    lon[:] = lon[:]*(180/math.pi)
+#    lat[:] = lat[:]*(180/math.pi)
 
 
     # R = 6371229 Radius of earth in meters
@@ -51,6 +73,7 @@ def read_data_netcdf():
 
 def eucl_norm(x1,x2):
     return np.linalg.norm(x1-x2)
+
 def getneighcoords(my_list, coords):
     xyz_r = np.zeros([len(my_list),3])
     xyz_r[:] = coords[my_list[:]]
