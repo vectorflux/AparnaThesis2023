@@ -44,7 +44,7 @@ allDz = []
 allpx = []
 allpy = []
 allpz = []
-
+f = []
 
 
 lonlat = read_data_netcdf() #Read data from a netcdf file
@@ -76,7 +76,7 @@ uvwh = atlas.make_view(myfield)
 
 n_p = functionspace.size
 search = Search(functionspace) #initializes the Search class with functionspace
-
+xyz_np = np.zeros([n_p,3])
 
 #loops over all the points in the subdomain
 #each function will work on one j at a time
@@ -99,7 +99,8 @@ for id in range(n_p):  # n_p
         A, invA = constructA(xyz_r)
         allA = np.append(allA,A)
         allinvA = np.append(allinvA,invA)
-
+        
+        xyz_np[id]=xyz[id]
 
         #call function to create D
         Xj = xyz[id]
@@ -134,6 +135,116 @@ allP = np.column_stack([allpx, allpy, allpz])
 
 
 #########################################################
+def get_rk4_values(uvwh, f, dt, nrj_size_list, allnearest,xyz, allD, ghost):
+
+    #Here uvwh has the size of entire subdomain n_p including Halo Region
+
+    length = len(nrj_size_list)
+    rk_u = np.ndarray([length,4])
+    rk_v = np.ndarray([length,4])
+    rk_w = np.ndarray([length,4])
+    rk_h = np.ndarray([length,4])
+    uvwh0 = uvwh
+    num = len(uvwh)
+    #for i in range(len(uvwh)):
+        ##f ghost[i]:
+         #   uvwh0 = np.delete(uvwh, (i), axis = 0)
+            #print("Halo region is present")
+
+    #halo = [i for i in range(len(uvwh)) if ghost[i]==1]
+    #uvwh0 = np.delete(uvwh)
+    #uvwh0 = np.delete(uvwh, (halo), axis = 0)
+
+    #print("New size of uvwh:", len(uvwh0))
+
+    #*****************  k1  ******************#
+
+    ##calculation of rhs with k1 as input (which is the initial value itself)
+    rk_u[:,0], rk_v[:,0], rk_w[:,0], rk_h[:,0]  = construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD)
+    #d1 = dt*rhs(k1)
+    rk_u[:, 0] = rk_u[:, 0] * dt
+    rk_v[:, 0] = rk_v[:, 0] * dt
+    rk_w[:, 0] = rk_w[:, 0] * dt
+    rk_h[:, 0] = rk_h[:, 0] * dt
+
+
+    #******************  k2  **************#
+
+    #k2 = uvwh0 + 0.5*d1
+    k = 0
+    for i in range(num):
+        if not ghost[i]:
+            uvwh[i, 0] = uvwh0[i, 0] + (rk_u[k,0]/2)
+            uvwh[i, 1] = uvwh0[i, 1] + (rk_v[k,0]/2)
+            uvwh[i, 2] = uvwh0[i, 2] + (rk_w[k,0]/2)
+            uvwh[i, 3] = uvwh0[i, 3] + (rk_h[k,0]/2)
+            k+=1
+
+        #Update values (Halo exchange)
+    myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+    myfield.halo_exchange()
+
+    #calculation of rhs with k2 as input
+    rk_u[:, 1], rk_v[:, 1], rk_w[:, 1], rk_h[:, 1] = construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD)
+
+    # d2 = dt*rhs(k2)
+    rk_u[:, 1] = rk_u[:, 1] * dt
+    rk_v[:, 1] = rk_v[:, 1] * dt
+    rk_w[:, 1] = rk_w[:, 1] * dt
+    rk_h[:, 1] = rk_h[:, 1] * dt
+
+    #*************   k3  *************#
+
+    #k3 = uvwh0 +0.5*d2
+    k = 0
+    for i in range(num):
+        if not ghost[i]:
+
+            uvwh[i, 0] = uvwh0[i, 0] + (rk_u[k, 1]/2)
+            uvwh[i, 1] = uvwh0[i, 1] + (rk_v[k, 1]/2)
+            uvwh[i, 2] = uvwh0[i, 2] + (rk_w[k, 1]/2)
+            uvwh[i, 3] = uvwh0[i, 3] + (rk_h[k, 1]/2)
+            k+=1
+
+#Update values (Halo exchange)
+    myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+    myfield.halo_exchange()
+
+    # calculation of rhs with k3 as input
+    rk_u[:, 2], rk_v[:, 2], rk_w[:, 2], rk_h[:, 2] = construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD)
+
+    # d3 = dt*rhs(k3)
+    rk_u[:, 2] = rk_u[:, 2] * dt
+    rk_v[:, 2] = rk_v[:, 2] * dt
+    rk_w[:, 2] = rk_w[:, 2] * dt
+    rk_h[:, 2] = rk_h[:, 2] * dt
+
+    # *************   k4  *************#
+
+    #k4 = uvwh0 + d3
+    k = 0
+    for i in range(num):
+        if not ghost[i]:
+            uvwh[i, 0] = uvwh0[i, 0] + (rk_u[k, 2])
+            uvwh[i, 1] = uvwh0[i, 1] + (rk_v[k, 2])
+            uvwh[i, 2] = uvwh0[i, 2] + (rk_w[k, 2])
+            uvwh[i, 3] = uvwh0[i, 3] + (rk_h[k, 2])
+
+    #Update values (Halo exchange)
+    myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+    myfield.halo_exchange()
+
+    # calculation of rhs with k4 as input
+    rk_u[:, 3], rk_v[:, 3], rk_w[:, 3], rk_h[:, 3] = construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD)
+
+    # d4 = dt*rhs(k4)
+    rk_u[:, 3] = rk_u[:, 3] * dt
+    rk_v[:, 3] = rk_v[:, 3] * dt
+    rk_w[:, 3] = rk_w[:, 3] * dt
+    rk_h[:, 3] = rk_h[:, 3] * dt
+
+    return rk_u, rk_v, rk_w, rk_h
+#######################################################################################
 
 #myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
 #myfield.halo_exchange()
@@ -147,16 +258,16 @@ allP = np.column_stack([allpx, allpy, allpz])
 #print("******size of Ru: ", len(Ru))
 
 #function to initialize fields
-uvwh = set_initial_conditions(uvwh, xyz, n_p, ghost)
-
+uvwh, f = set_initial_conditions(uvwh, xyz_np, n_p, ghost)
+#print("uvwh and f before time loop are: ", uvwh, f)
 #Time loop
 
 timeloop_start = time.time()
 
 t = 0
 tot_t = 100
-dt = 0.1
-n_timesteps = tot_t/dt
+#dt = 0.1
+n_timesteps = 864 #12 days (12 * 86400/1200)
 
 for i in range(n_timesteps):
 
@@ -164,19 +275,35 @@ for i in range(n_timesteps):
     myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
     myfield.halo_exchange()
 
-    dt = 0.1
-    uvwh0 = uvwh
+    dt = 1200
+    #halo = [i for i in range(len(uvwh)) if ghost[i]==1]
+    
+    uvwh0 = uvwh #with halo region
 
 
     # function to get arrays of rk values for u, v, w, h
-    rk_u, rk_v, rk_w, rk_h = get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD)
+    #rk_u will be the size of internal np points
 
-    #Calculate uvwh at next timestep (overwriting): need all RHS values
-    uvwh[:,0] = uvwh0[:,0] + (rk_u[:,0] + rk_u[:,3])/6 + (rk_u[:,1]+rk_u[:,2])/3
-    uvwh[:,1] = uvwh0[:,1] + (rk_v[:,0] + rk_v[:,3])/6 + (rk_v[:,1]+rk_v[:,2])/3
-    uvwh[:,2] = uvwh0[:,2] + (rk_w[:,0] + rk_w[:,3])/6 + (rk_w[:,1]+rk_w[:,2])/3
-    uvwh[:,3] = uvwh0[:,3] + (rk_h[:,0] + rk_h[:,3])/6 + (rk_h[:,1]+rk_h[:,2])/3
+    rk_u, rk_v, rk_w, rk_h = get_rk4_values(uvwh, f, dt, nrj_size_list, allnearest,xyz, allD, ghost)
 
+    #halo = [i for i in range(len(uvwh)) if ghost[i]==1]
+    #uvwh0 = uvwh = np.delete(uvwh, (halo), axis = 0)
+    l = 0 
+    for k in range(len(uvwh)):
+        if not ghost[k]:
+            
+            #Calculate uvwh at next timestep (overwriting): need all RHS values
+            uvwh[k,0] = uvwh0[k,0] + (rk_u[l,0] + rk_u[l,3])/6 + (rk_u[l,1]+rk_u[l,2])/3
+            uvwh[k,1] = uvwh0[k,1] + (rk_v[l,0] + rk_v[l,3])/6 + (rk_v[l,1]+rk_v[l,2])/3
+            uvwh[k,2] = uvwh0[k,2] + (rk_w[l,0] + rk_w[l,3])/6 + (rk_w[l,1]+rk_w[l,2])/3
+            uvwh[k,3] = uvwh0[k,3] + (rk_h[l,0] + rk_h[l,3])/6 + (rk_h[l,1]+rk_h[l,2])/3
+
+            l += 1
+
+    #print("uvwh and f in the time loop are: ", uvwh, f)
+
+    #print("Final value of k:", k,"for loop of i", i)
+    #uvwh[:,1] = uvwh0[:,1] + (rk_v[:,0] + rk_v[:,3])/6 + (rk_v[:,1]+rk_v[:,2])/3
     #update uvwh with new values
     #uvwh = uvwh_n
 
@@ -185,6 +312,8 @@ timeloop_end = time.time()
 print("Time taken by the time loop: ", timeloop_end-timeloop_start, "seconds" )
 
 print("Final values of uvwh: " , uvwh)
+
+
 
 atlas.finalize()
 
