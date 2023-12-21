@@ -26,6 +26,7 @@ from atlas_func_interface import *
 from read_netcdf_file import *
 from A_matrices import *
 from initializefields import *
+from visualization import *
 
 atlas_start = time.time()
 atlas.initialize() #initializes atlas and MPI
@@ -53,14 +54,14 @@ grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured G
 #Create functionspace + partitioning #levels in the pointcloud implementation
 functionspace = atlas.functionspace.PointCloud(grid, halo_radius=myradius * 2, geometry="UnitSphere")
 
-
-
 ###Access fields as numpy arrays, if needed
 lonlat = atlas.make_view(functionspace.lonlat) # longitude latitude in degrees
 ghost = atlas.make_view(functionspace.ghost) # ghost: 1 for ghost, 0 for owned
 partition = atlas.make_view(functionspace.partition) #partition owning point (0-based)
 remote_index = atlas.make_view(functionspace.remote_index) # local index on partition owning point (careful, 1-based when atlas_HAVE_FORTRAN)
 global_index = atlas.make_view(functionspace.global_index) # global index across partitions (always 1-based)
+
+
 
 xyz = getcartesian(lonlat)
 ###Create Fields
@@ -72,11 +73,20 @@ xyz = getcartesian(lonlat)
 myfield = functionspace.create_field(name="swe_variables", variables=4, dtype = np.float64)
 uvwh = atlas.make_view(myfield)
 
-### FINDING NEIGHBORS + INITIALIZATION
+mycoords = functionspace.create_field(name="lonlat", variables=2, dtype = np.float64)
+lonlat_sd = atlas.make_view(mycoords)
+#lonlat_sd = lonlat
 
+   
+#print("Lonlat SD:", lonlat_sd)
+
+
+### FINDING NEIGHBORS + INITIALIZATION
 n_p = functionspace.size
 search = Search(functionspace) #initializes the Search class with functionspace
 xyz_np = np.zeros([n_p,3])
+
+
 
 #loops over all the points in the subdomain
 #each function will work on one j at a time
@@ -116,7 +126,7 @@ for id in range(n_p):  # n_p
 
 initloop_end = time.time()
 
-print("Time elapsed in the initialization loop): ", initloop_end-initloop_start, "seconds" )
+#print("Time elapsed in the initialization loop): ", initloop_end-initloop_start, "seconds" )
 # call function to  initialize fields
 allD = np.column_stack([allDx, allDy, allDz])
 allP = np.column_stack([allpx, allpy, allpz])
@@ -244,26 +254,58 @@ def get_rk4_values(uvwh, f, dt, nrj_size_list, allnearest,xyz, allD, ghost):
     rk_h[:, 3] = rk_h[:, 3] * dt
 
     return rk_u, rk_v, rk_w, rk_h
-#######################################################################################
+#####################################################################################
+######################################################################################
 
-#myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
-#myfield.halo_exchange()
-#vt = validate_halo_exchange(uvwh, xyz, n_p,ghost)
-#print("Halo exchange passed with vt = ", vt)
-#print("uvwh values are:\n" , uvwh )
 
-#function to create rhs for u,v,w,h
-#Ru, Rv, Rw, Rh = construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD)
-#print("Ru:",Ru, "\nRv:",Rv, "\nRw:",Rw, "\nRh:",Rh )
-#print("******size of Ru: ", len(Ru))
 
 #function to initialize fields
 uvwh, f = set_initial_conditions(uvwh, xyz_np, n_p, ghost)
-#print("uvwh and f before time loop are: ", uvwh, f)
-#Time loop
+
+for n in range(n_p):
+  if not ghost[n]:
+    lonlat_sd[n,0] = lonlat[n,0]
+    lonlat_sd[n,1] = lonlat[n,1]
+    
+  else:
+     lonlat_sd[n,0] = lonlat[n,1] = 0.0
+
+#print("Range: ", np.min)
+
+myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+myfield.halo_exchange()
+
+mycoords.halo_dirty = True
+mycoords.halo_exchange()
+
+
+
+
+#print("Range of u: ", np.min(uvwh[:,0]), np.max(uvwh[:,0]))
+#print("Range of v: ", np.min(uvwh[:,1]), np.max(uvwh[:,1]))
+#print("Range of w: ", np.min(uvwh[:,2]), np.max(uvwh[:,2]))
+
+fs = myfield.functionspace
+field_global = fs.create_field_global(name="swe_variables_global", variables=4,dtype=np.float64)
+functionspace.gather(myfield, field_global)
+uvwh_global = atlas.make_view(field_global)
+
+fs = mycoords.functionspace
+lonlat_global = fs.create_field_global(name="lonlat_global", variables=2)
+functionspace.gather(mycoords, lonlat_global)
+lonlat_global_coords = atlas.make_view(lonlat_global)
+
+
+if functionspace.part ==0:
+    #print("Lonlat Global:", lonlat_global_coords)
+    #print("UVWH Global:", uvwh_global)
+    plot_global(uvwh_global,lonlat_global_coords)
+
+
+#plot_global(myfield)
+
 
 timeloop_start = time.time()
-
 t = 0
 tot_t = 100
 #dt = 0.1
@@ -272,8 +314,8 @@ n_timesteps = 864 #12 days (12 * 86400/1200)
 for i in range(n_timesteps):
 
     #Update values (Halo exchange)
-    myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
-    myfield.halo_exchange()
+    #myfield.halo_dirty = True  # if set to False, following halo_exchange will have no effect. Note it was already True upon create_field
+    #myfield.halo_exchange()
 
     dt = 1200
     #halo = [i for i in range(len(uvwh)) if ghost[i]==1]
@@ -284,7 +326,7 @@ for i in range(n_timesteps):
     # function to get arrays of rk values for u, v, w, h
     #rk_u will be the size of internal np points
 
-    rk_u, rk_v, rk_w, rk_h = get_rk4_values(uvwh, f, dt, nrj_size_list, allnearest,xyz, allD, ghost)
+    #rk_u, rk_v, rk_w, rk_h = get_rk4_values(uvwh, f, dt, nrj_size_list, allnearest,xyz, allD, ghost)
 
     #halo = [i for i in range(len(uvwh)) if ghost[i]==1]
     #uvwh0 = uvwh = np.delete(uvwh, (halo), axis = 0)
@@ -293,33 +335,32 @@ for i in range(n_timesteps):
         if not ghost[k]:
             
             #Calculate uvwh at next timestep (overwriting): need all RHS values
-            uvwh[k,0] = uvwh0[k,0] + (rk_u[l,0] + rk_u[l,3])/6 + (rk_u[l,1]+rk_u[l,2])/3
-            uvwh[k,1] = uvwh0[k,1] + (rk_v[l,0] + rk_v[l,3])/6 + (rk_v[l,1]+rk_v[l,2])/3
-            uvwh[k,2] = uvwh0[k,2] + (rk_w[l,0] + rk_w[l,3])/6 + (rk_w[l,1]+rk_w[l,2])/3
-            uvwh[k,3] = uvwh0[k,3] + (rk_h[l,0] + rk_h[l,3])/6 + (rk_h[l,1]+rk_h[l,2])/3
+            #uvwh[k,0] = uvwh0[k,0] + (rk_u[l,0] + rk_u[l,3])/6 + (rk_u[l,1]+rk_u[l,2])/3
+            #uvwh[k,1] = uvwh0[k,1] + (rk_v[l,0] + rk_v[l,3])/6 + (rk_v[l,1]+rk_v[l,2])/3
+            #uvwh[k,2] = uvwh0[k,2] + (rk_w[l,0] + rk_w[l,3])/6 + (rk_w[l,1]+rk_w[l,2])/3
+            #uvwh[k,3] = uvwh0[k,3] + (rk_h[l,0] + rk_h[l,3])/6 + (rk_h[l,1]+rk_h[l,2])/3
 
             l += 1
 
     #print("uvwh and f in the time loop are: ", uvwh, f)
 
     #print("Final value of k:", k,"for loop of i", i)
+
     #uvwh[:,1] = uvwh0[:,1] + (rk_v[:,0] + rk_v[:,3])/6 + (rk_v[:,1]+rk_v[:,2])/3
     #update uvwh with new values
     #uvwh = uvwh_n
 
 
 timeloop_end = time.time()
-print("Time taken by the time loop: ", timeloop_end-timeloop_start, "seconds" )
+#print("Time taken by the time loop: ", timeloop_end-timeloop_start, "seconds" )
 
-print("Final values of uvwh: " , uvwh)
-
-
+#print("Final values of uvwh: " , uvwh)
 
 atlas.finalize()
 
 atlas_end = time.time()
 
-print("Total Time elapsed (Atlas-finalize): ", atlas_end-atlas_start, "seconds" )
+#print("Total Time elapsed (Atlas-finalize): ", atlas_end-atlas_start, "seconds" )
 
 
 

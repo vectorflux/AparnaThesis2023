@@ -158,7 +158,7 @@ def set_initial_conditions(uvwh, xyz, n_p, ghost):
     h0 = 2.94e4 / (g*6371000*6371000); #1.9024e-4
     Omega = 7.292e-5;
     uu0 = 2 * np.pi * radius / (12 * 86400);
-    angle = 0.3491
+    angle = 0.0
     h0_fun = lambda lam, th: h0 - 1 / g * (radius * Omega * uu0 + uu0 ** 2 / 2) * (np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
     #u_fun = lambda lam, th: -np.sin(lam)*(uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle)))+ (-np.cos(lam)*np.sin(th))*(-uu0 * np.sin(angle) * np.sin(lam))
     #v_fun = lambda lam, th: np.cos(lam)*(uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle)))+ (-np.sin(lam)*np.sin(th))*(-uu0 * np.sin(angle) * np.sin(lam))
@@ -224,7 +224,7 @@ def set_initial_conditions(uvwh, xyz, n_p, ghost):
 
             f[n] = 0.
 
-        print("uvwh and f: ", uvwh[n], f[n])
+        #print("uvwh and f: ", uvwh[n], f[n])
 
 
     return uvwh,f
@@ -255,3 +255,38 @@ def uvw_fun(lam,th, uu0, angle):
 
 
     return uvw
+
+
+def uvw_fun_test6(lam,th, uu0, angle):
+
+    g = 1.5454e-8;
+    Omega = 7.292e-5;
+    omega = 7.848e-6;
+    K = omega;
+    h0 = 1.25568e-3;#8000/6371000
+    R = 4
+    
+
+    A_fun = lambda lam, th: 0.5 * omega * (2 * Omega + omega) * np.cos(th) ** 2 + 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 + (2 * R * R - R - 2) - 2 * R * R * np.cos(th) ** (-2))
+    B_fun = lambda lam, th: 2 * (Omega + omega) * K * np.cos(th) ** R * ((R * R + 2 * R + 2) - (R + 1) ** 2 * np.cos(th) ** 2) / ((R + 1) * (R + 2))
+    C_fun = lambda lam, th: 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 - (R + 2))
+
+    h0_fun = lambda lam, th: h0 + radius * radius / g * (A_fun(lam, th) + B_fun(lam, th) * np.cos(R * lam) + C_fun(lam, th) * np.cos(2 * R * lam))
+    u_fun = lambda lam, th: radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam))
+    v_fun = lambda lam, th: (-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
+
+    #w_fun = lambda lam,th: np.cos(th)*(-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
+
+
+    lat_fun = u_fun(lam,th)
+    lon_fun = v_fun(lam,th)
+
+    s2c_lat = np.array([-np.sin(lam), np.cos(lam), 0.])
+    s2c_lon = np.array([-np.cos(lam)*np.sin(th), -np.sin(lam)*np.sin(th), np.cos(th)])
+
+    uvw = lat_fun*s2c_lat + lon_fun*s2c_lon
+
+
+
+    return uvw
+
