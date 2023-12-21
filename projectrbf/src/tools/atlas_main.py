@@ -298,7 +298,7 @@ lonlat_global_coords = atlas.make_view(lonlat_global)
 
 if functionspace.part ==0:
     #print("Lonlat Global:", lonlat_global_coords)
-    #print("UVWH Global:", uvwh_global)
+    print("UVWH Global:", uvwh_global)
     plot_global(uvwh_global,lonlat_global_coords)
 
 

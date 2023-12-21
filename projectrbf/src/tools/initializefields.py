@@ -1,7 +1,7 @@
 import numpy as np
 from operator_matrices import *
 import math
-
+from helperfuncs import *
 
 def construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD):
     n_p0 = len(nrj_size_list)
@@ -133,89 +133,58 @@ def construct_rhsd(nrj_size_list, allnearest, uvwh, f, xyz, allD):
 def set_initial_conditions(uvwh, xyz, n_p, ghost):
 
 
-    #for p in range(len(xyz))
-        
-    #x = xyz[:,0]
-    #y = xyz[:,1]
-    #z = xyz[:,2]
-
-    #lam = []
-    #th = []
-    #az = []
     f = np.empty(len(uvwh))
-
-    #lam = np.sqrt(np.square(x) + np.square(y) + np.square(z))
-    #th = np.math.atan2(np.divide(np.square(x)+np.square(y),z))
-    #az = np.multiply(np.sign(y),np.arccos(np.divide(x,np.sqrt(np.square(x) +np.square(y)))))
 
     #print("lambda and Theta are : ", lam, th)
     
     #ic_type = "case_2"
     radius =1.
-
-    #if ic_type == "case_2":
     g = 1.5454e-8;
     h0 = 2.94e4 / (g*6371000*6371000); #1.9024e-4
     Omega = 7.292e-5;
     uu0 = 2 * np.pi * radius / (12 * 86400);
     angle = 0.0
-    h0_fun = lambda lam, th: h0 - 1 / g * (radius * Omega * uu0 + uu0 ** 2 / 2) * (np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
-    #u_fun = lambda lam, th: -np.sin(lam)*(uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle)))+ (-np.cos(lam)*np.sin(th))*(-uu0 * np.sin(angle) * np.sin(lam))
-    #v_fun = lambda lam, th: np.cos(lam)*(uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle)))+ (-np.sin(lam)*np.sin(th))*(-uu0 * np.sin(angle) * np.sin(lam))
-    #w_fun = lambda lam, th: np.cos(th)*(-uu0 * np.sin(angle) * np.sin(lam))
-        
-        #u_cart = 
-
+       
     coriolis_fun = lambda lam, th: 2 * Omega * (np.sin(th) * np.cos(angle) - np.cos(th) * np.cos(lam) * np.sin(angle))
+    
+    lam = np.zeros(len(xyz))
+    th = np.zeros(len(xyz))
 
+    x = xyz[:,0]
+    y = xyz[:,1]
+    z = xyz[:,2]
 
-    #elif ic_type == "case_6":
-    #    g = 1.5454e-8;
-    #    Omega = 7.292e-5;
-    #    omega = 7.848e-6;
-    #    K = omega;
-    #    h0 = 1.25568e-3;#8000/6371000
-    #    R = 4
-    #    A_fun = lambda lam, th: 0.5 * omega * (2 * Omega + omega) * np.cos(th) ** 2 + 0.25 * K * K * np.cos(th) ** (
-    #            2 * R) * ((R + 1) * np.cos(th) ** 2 + (2 * R * R - R - 2) - 2 * R * R * np.cos(th) ** (-2))
-    #    B_fun = lambda lam, th: 2 * (Omega + omega) * K * np.cos(th) ** R * (
-    #            (R * R + 2 * R + 2) - (R + 1) ** 2 * np.cos(th) ** 2) / ((R + 1) * (R + 2))
-    #    C_fun = lambda lam, th: 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 - (R + 2))
-
-    #    h0_fun = lambda lam, th: h0 + radius * radius / g * (
-         #       A_fun(lam, th) + B_fun(lam, th) * np.cos(R * lam) + C_fun(lam, th) * np.cos(2 * R * lam))
-    #    u_fun = lambda lam, th: -np.sin(lam)*(radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (
-    #            R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam)))+ (-np.cos(lam)*np.sin(th))*(-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
-    #    v_fun = lambda lam, th: np.cos(lam)*(radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (
-    #            R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam)))+(-np.sin(lam)*np.sin(th))*(-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
-
-    #    w_fun = lambda lam,th: np.cos(th)*(-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
-        
-    #   coriolis_fun = lambda lam, th: 2 * Omega * np.sin(th)
-
-    #else:
-    #    raise Exception(f"Unknown initial condition type: {ic_type}")
+    #lam[:] = math.atan2(y[:],x[:])
+    #th[:] = math.acos(z[:]/(math.sqrt(x[:]**2 +y[:]**2 + z[:]**2)))
+    
+    v_lon = np.zeros(n_p)
+    v_lat = np.zeros(n_p)
+    h = np.zeros(n_p)
 
     for n in range(n_p):
-        if not ghost[n]: #initializing all internal values
-            
-            x = xyz[n,0]
-            y = xyz[n,1]
-            z = xyz[n,2]
-    
-            #lam = np.sqrt(np.square(x) + np.square(y) + np.square(z))
-            #th = np.arctan2(np.square(x)+np.square(y),z)
-            lam = math.atan2(y,x)
-            th = math.acos(z/(math.sqrt(x**2 +y**2 + z**2)))
+        if not ghost[n]: #calculating all internal values
 
-            uvw = uvw_fun(lam,th, uu0, angle)
-            uvwh[n,0] = uvw[0]
-            uvwh[n,1] = uvw[1]
-            uvwh[n,2] = uvw[2]
-            uvwh[n,3] = h0_fun(lam,th)
+            lam[n] = math.atan2(y[n],x[n])
+            th[n] = math.acos(z[n]/(math.sqrt(x[n]**2 +y[n]**2 + z[n]**2)))
             
-            f[n] = coriolis_fun(lam,th)
+            v_lon[n], v_lat[n], h[n] = test6_fun(lam[n],th[n])
+            
+            f[n] = coriolis_fun(lam[n],th[n])
 
+
+
+    uvw = cartesian_fromlonlat(v_lon, v_lat, lam, th)
+            #uvw, h = test6_fun(lam[n],th[n])
+            
+    for n in range(n_p):
+        if not ghost[n]: #initializing all internal values        
+            
+            uvwh[n,0] = uvw[n,0]
+            uvwh[n,1] = uvw[n,1]
+            uvwh[n,2] = uvw[n,2]
+            uvwh[n,3] = h[n]
+            
+          
         else:
             uvwh[n,0] = 0.
             uvwh[n,1] = 0.
@@ -229,35 +198,37 @@ def set_initial_conditions(uvwh, xyz, n_p, ghost):
 
     return uvwh,f
 
-def validate_halo_exchange(uvwh,xyz, n_p,ghost):
-    vt = 1
-    for n in range(n_p):
-        if ghost[n]:
-            if (uvwh[n,3] != 4*(xyz[n,0]**2 +xyz[n,1]**2 +xyz[n,2]**2)):
-                print("Halo exchange failed")
-                vt = 0
 
-    return vt
+def test2_fun(lam,th):
+    g = 1.5454e-8;    
+    radius = 1.0 
+    uu0 = 2 * np.pi * radius / (12 * 86400);
+    angle = 0.0
+    h0 = 2.94e4 / (g*6371000*6371000); #1.9024e-4
+    Omega = 7.292e-5;
+    omega = 7.848e-6;
 
+    h0_fun = lambda lam, th: h0 - 1 / g * (radius * Omega * uu0 + uu0 ** 2 / 2) * (np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
 
-def uvw_fun(lam,th, uu0, angle):
-    
 
 
     lat_fun = uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle))
     lon_fun = -uu0 * np.sin(angle) * np.sin(lam)
 
-    s2c_lat = np.array([-np.sin(lam), np.cos(lam), 0.])
-    s2c_lon = np.array([-np.cos(lam)*np.sin(th), -np.sin(lam)*np.sin(th), np.cos(th)])
+    h = h0_fun(lam,th)
+
+    #s2c_lat = np.array([-np.sin(lam), np.cos(lam), 0.])
+    #s2c_lon = np.array([-np.cos(lam)*np.sin(th), -np.sin(lam)*np.sin(th), np.cos(th)])
     
-    uvw = lat_fun*s2c_lat + lon_fun*s2c_lon
+    #uvw = lat_fun*s2c_lat + lon_fun*s2c_lon
+    
+    #uvw = cartesian_fromlonlat(lat_fun, lon_fun, lam, th)
 
 
+    return lon_fun,lat_fun, h
 
-    return uvw
 
-
-def uvw_fun_test6(lam,th, uu0, angle):
+def test6_fun(lam,th):
 
     g = 1.5454e-8;
     Omega = 7.292e-5;
@@ -265,7 +236,11 @@ def uvw_fun_test6(lam,th, uu0, angle):
     K = omega;
     h0 = 1.25568e-3;#8000/6371000
     R = 4
+    radius = 1.0
+    uu0 = 2 * np.pi * radius / (12 * 86400);
+    angle = 0.0
     
+    #h0 = 2.94e4 / (g*6371000*6371000); #1.9024e-4
 
     A_fun = lambda lam, th: 0.5 * omega * (2 * Omega + omega) * np.cos(th) ** 2 + 0.25 * K * K * np.cos(th) ** (2 * R) * ((R + 1) * np.cos(th) ** 2 + (2 * R * R - R - 2) - 2 * R * R * np.cos(th) ** (-2))
     B_fun = lambda lam, th: 2 * (Omega + omega) * K * np.cos(th) ** R * ((R * R + 2 * R + 2) - (R + 1) ** 2 * np.cos(th) ** 2) / ((R + 1) * (R + 2))
@@ -275,18 +250,17 @@ def uvw_fun_test6(lam,th, uu0, angle):
     u_fun = lambda lam, th: radius * omega * np.cos(th) + radius * K * np.cos(th) ** (R - 1) * (R * np.sin(th) ** 2 - np.cos(th) ** 2) * (np.cos(R * lam))
     v_fun = lambda lam, th: (-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
 
-    #w_fun = lambda lam,th: np.cos(th)*(-radius * K * R * np.cos(th) ** (R - 1) * np.sin(th) * np.sin(R * lam))
-
-
+    
     lat_fun = u_fun(lam,th)
     lon_fun = v_fun(lam,th)
+    h = h0_fun(lam,th)
 
-    s2c_lat = np.array([-np.sin(lam), np.cos(lam), 0.])
-    s2c_lon = np.array([-np.cos(lam)*np.sin(th), -np.sin(lam)*np.sin(th), np.cos(th)])
+   # s2c_lat = np.array([-np.sin(lam), np.cos(lam), 0.])
+   # s2c_lon = np.array([-np.cos(lam)*np.sin(th), -np.sin(lam)*np.sin(th), np.cos(th)])
 
-    uvw = lat_fun*s2c_lat + lon_fun*s2c_lon
+    #uvw = lat_fun*s2c_lat + lon_fun*s2c_lon
 
+    #uvw = cartesian_fromlonlat(lat_fun, lon_fun, lam, th)
 
-
-    return uvw
+    return lon_fun,lat_fun, h
 

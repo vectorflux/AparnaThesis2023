@@ -4,8 +4,10 @@ import numpy as np
 import math
 import cartopy.crs as ccrs
 from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
-from helperfuncs import*
+from helperfuncs import *
 from read_netcdf_file import *
+from initializefields import *
+
 
 def plot_global(uvwh, lonlat):
 
@@ -22,34 +24,40 @@ def plot_global(uvwh, lonlat):
     #lon[:] = lon[:]*(180/math.pi)
     #lat[:] = lat[:]*(180/math.pi)
 
+    N = len(lam)
     xyz = getcartesian(lonlat)
     
-    print("length of xyz: ", len(xyz))
+    uvw = np.zeros([N,3])
+    h = np.zeros(N)
+    v_lon = np.zeros(N)
+    v_lat = np.zeros(N)
+    
+    #print("length of xyz: ", len(xyz))
     x = xyz[:,0]
     y = xyz[:,1]
     z = xyz[:,2]
     
-    uu0 = 2 * np.pi * 1.0 / (12 * 86400);
-    angle = 0.0
-    g = 1.5454e-8;
-    h0 = 2.94e4 / (g*6371000*6371000); #1.9024e-4
-    Omega = 7.292e-5;
     
+    for n in range(N):
 
-    zonal_fun = uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle))
-    meri_fun = -uu0 * np.sin(angle) * np.sin(lam)
-    h0_fun =  h0 - 1 / g * ( Omega * uu0 + uu0 ** 2 / 2) * (np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
+        #v_lon[n], v_lat[n], h[n] = test2_fun(lam[n],th[n])
+        v_lon[n], v_lat[n], h[n] = test6_fun(lam[n],th[n])
+
+
+    #zonal_fun = uu0 * (np.cos(th) * np.cos(angle) + np.sin(th) * np.cos(lam) * np.sin(angle))
+    #meri_fun = -uu0 * np.sin(angle) * np.sin(lam)
+    #h0_fun =  h0 - 1 / g * ( Omega * uu0 + uu0 ** 2 / 2) * (np.sin(th) * np.cos(angle) - np.cos(lam) * np.cos(th) * np.sin(angle)) ** 2
 
     #print("Shape of LON-LAT:", len(lon),len(lat),"\n")
-    u = uvwh[:,0]
-    v = uvwh[:,1]
-    w = uvwh[:,2]
-    h = uvwh[:,3]
+    #u = uvwh[:,0]
+    #v = uvwh[:,1]
+    #w = uvwh[:,2]
+    #h = uvwh[:,3]
 
     # Set up a 3D plot
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    scatter = ax.scatter(x,y,z, c=h, cmap='plasma')
+    scatter = ax.scatter(x,y,z, c=v_lon, cmap='plasma')
     #plt.scatter(lam, th, cmap='plasma')
     #ax.quiver(x, y, z, u, v, w, length=0.1, normalize=True, color='blue', arrow_length_ratio=0.3)
     fig.colorbar(scatter, ax=ax, label='data')
@@ -63,7 +71,7 @@ def plot_global(uvwh, lonlat):
     #plt.ylabel('Y')
     #ax.coastlines (resolution='110m', color='k')
     #ax.set_global()
-    ax.set_title('Meridinal Velocity on Spherical Surface' )
+    ax.set_title('Meridinial Velocity on Spherical Surface' )
     #ax.set_facecolor('gray')
     #fig.colorbar(scatter, ax=ax)
     #plt.subplots_adjust(hspace=0.5)
