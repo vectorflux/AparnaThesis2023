@@ -14,7 +14,7 @@ def constructA(xyz_r):
 
         # diagonal elements
         for i in range(n):
-            A[i][i] = wendland0(0)
+            A[i][i] = wendland1(0)
 
         #elements below and above diagonal
         for i in range(n):
@@ -22,7 +22,8 @@ def constructA(xyz_r):
                 if k < i :
                     r = eucl_norm(xyz_r[i],xyz_r[k]) #sends two tuples and gets the norm back
                     #print(r)
-                    A[i][k] = wendland0(r)
+                    r=r/0.065 #scaling to match the Wendland functions
+                    A[i][k] = wendland1(r)
                     A[k][i] = A[i][k]
 
         invA = inverta(A)

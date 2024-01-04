@@ -56,8 +56,8 @@ def differentiation (inv_A,xyz_r,Xj):
     mult_constant = np.empty(n)
     
     for i in range(n):
-        r_x[i] = eucl_norm(xyz_r[i],Xj)
-        mult_constant[i] = wendland0_prime(r_x[i]) / r_x[i]
+        r_x[i] = eucl_norm(xyz_r[i],Xj)/0.065 #scaling to match wendland functions
+        mult_constant[i] = wendland1_prime(r_x[i]) / r_x[i]
 
     ## Dimensions ##
 
