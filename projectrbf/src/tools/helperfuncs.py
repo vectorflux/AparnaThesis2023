@@ -4,8 +4,6 @@ import math
 from testcases import *
 
 
-
-
 def getpxyz(xyz):
 
     px = np.zeros(3)
@@ -15,10 +13,6 @@ def getpxyz(xyz):
     x = xyz[0]
     y = xyz[1]
     z = xyz[2]
-
-
-        #if i==1:
-            #print("xyz", x,y,z)
 
     px[0] = (1 - (x ** 2))
     px[1] = (0 - (x * y))
@@ -37,6 +31,21 @@ def getpxyz(xyz):
     pz = pz[np.newaxis,:]
 
     return px, py, pz
+
+#need to get neighborhood Dnx, Dny, Dnz (saved sequentially for each point)
+def get_Dnxyz_from_allD(allD, allnearest, it, k):
+
+         
+    itx = it+k
+
+    Dnx = allD[it: itx, 0]
+    Dny = allD[it: itx, 1]
+    Dnz = allD[it: itx, 2]
+    nearest = allnearest[it:itx]
+
+    return Dnx[:,np.newaxis], Dny[:,np.newaxis], Dnz[:,np.newaxis], nearest
+
+
 def get_uvwh_r(uvwh,nearest):
     uvwh_r = np.zeros([len(nearest),4])
     for n in range(len(nearest)):
@@ -45,18 +54,11 @@ def get_uvwh_r(uvwh,nearest):
         uvwh_r[n,2] = uvwh[int(nearest[n]),2]
         uvwh_r[n,3] = uvwh[int(nearest[n]),3]
 
-        #print(np.where((np.sum(uvwh_r, axis=1))==0)[0])
-
-
     return uvwh_r
 
 
 
 def getcartesian(lonlat):
-
-    #lat = lonlat[:,1]
-    #lon = lonlat[:,0]
-    
 
     ## Convert lon lat from degrees to radians. Uncomment if needed
     lon = np.radians(lonlat[:,0])
