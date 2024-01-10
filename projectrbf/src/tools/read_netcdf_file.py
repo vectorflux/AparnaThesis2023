@@ -24,9 +24,8 @@ def read_data_netcdf():
     lat = clat[:]
 
     ## Convert lon lat from radians to degres. Uncomment if needed
-    lon[:] = lon[:]*(180/math.pi)
-    lat[:] = lat[:]*(180/math.pi)
-
+    lon[:] = np.degrees(lon[:])
+    lat[:] = np.degrees(lat[:])
 
 
     # R = 6371229 Radius of earth in meters

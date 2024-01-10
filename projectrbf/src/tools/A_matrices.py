@@ -23,13 +23,19 @@ def constructA(xyz_r):
                     r = eucl_norm(xyz_r[i],xyz_r[k]) #sends two tuples and gets the norm back
                     #print(r)
                     r=r/0.065 #scaling to match the Wendland functions
+                    #print("r:", r)
                     A[i][k] = wendland1(r)
                     A[k][i] = A[i][k]
 
         invA = inverta(A)
-        nrj = n*n
-        np.reshape(A, (1,nrj))
-        np.reshape(invA, (1,nrj))
+        
+        #det = linalg.det(np.dot(A,invA))
+        #if not np.isclose(det,1.0):
+            #print(det)
+
+        #nrj = n*n
+        #A = np.reshape(A, (1,nrj))
+        #np.reshape(invA, (1,nrj))
 
 
         return A, invA
@@ -38,8 +44,17 @@ def constructA(xyz_r):
 
 def inverta(A):
 
-    p,l,u = scp.lu(A)
-    inv_a = np.matmul(linalg.inv(u),linalg.inv(l))
+    pl,u = scp.lu(A, permute_l = True)
+    #l = np.dot(p,l)
+
+    u_inv = linalg.inv(u)
+
+
+    pl_inv = linalg.inv(pl)
+    
+    #print(np.allclose(A, pl@u))
+
+    inv_a = np.matmul(u_inv,pl_inv)
     return inv_a
 
 

@@ -52,35 +52,51 @@ def differentiation (inv_A,xyz_r,Xj):
     Bx = np.zeros(n)
     By = np.zeros(n)
     Bz = np.zeros(n)
-    r_x = np.zeros(n)
-    mult_constant = np.empty(n)
+    #r_x = np.zeros(n)
+    #mult_constant = np.empty(n)
     
     for i in range(n):
-        r_x[i] = eucl_norm(xyz_r[i],Xj)/0.065 #scaling to match wendland functions
-        mult_constant[i] = wendland1_prime(r_x[i]) / r_x[i]
+        #print(xyz_r[i,:])
+        r_x = eucl_norm(xyz_r[i,:],Xj)/0.065 #scaling to match wendland functions
+        mult_constant = wendland1_prime(r_x) / r_x
 
-    ## Dimensions ##
-
-
+ 
     #[1,nrj] = ([1,1]*(np.matmul([1,3],[3,nrj]) - [1,nrj]) * [1,nrj]
-    Bx[:] = (Xj[0]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,0])))*mult_constant[:]
-    By[:] = (Xj[1]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,1])))*mult_constant[:]
-    Bz[:] = (Xj[2]*(np.matmul(Xj, np.transpose(xyz_r[:])) - np.transpose(xyz_r[:,2])))*mult_constant[:]
-
-    ## OLD 2 ## Bx[:] = (xyz_r[:,0]*(np.dot(xyz_r[j],np.transpose(Xj))) - Xj[0])*mult_constant[:]
-
-    ## OLD ##By[:] = (coords[j,1]*(np.dot(coords[j],np.transpose(Xk)))) - Xk[1]*(phi_p/r_x)
+        Bx[i] = ((xyz_r[i,0]*(np.dot(Xj,(xyz_r[i,:])))) - Xj[0])*mult_constant
+        By[i] = ((xyz_r[i,1]*(np.dot(Xj,(xyz_r[i,:])))) - Xj[1])*mult_constant
+        Bz[i] = ((xyz_r[i,2]*(np.dot(Xj,(xyz_r[i,:])))) - Xj[2])*mult_constant
+        
+        Bxyz = np.row_stack([Bx[i],By[i],Bz[i]])
+        product = np.dot(xyz_r[i,:],Bxyz)
+        
+        #print("dotproduct of B:", product)
 
     #[1,nrj] = np.matmul( [1,nrj],[nrj,nrj] )
+
+    Bx = Bx[np.newaxis,:]
+    By = By[np.newaxis,:]
+    Bz = Bz[np.newaxis,:]
+    
+    Bxyz = np.row_stack([Bx,By,Bz])
+    #print("Bx:", Bxyz)
+    
     Dx = np.matmul(Bx,inv_A)
     Dy = np.matmul(By,inv_A)
     Dz = np.matmul(Bz,inv_A)
+
+    Dxyz = np.row_stack([Dx,Dy,Dz])
+    
+    #print(np.shape(Xj), np.shape(Dxyz))
+    #dotproduct = np.dot(Xj,Dxyz)
+    #for i in range(len(xyz_r)):
+        #product = np.dot(xyz_r[i,:],Dxyz[:,i])
+        #print( " dotproduct  of dxyz:", product)
 
     #print('Dx: ', Dx)
     #print('Dy: ', Dy)
     #print('Dz: ', Dz)
 
-
+    #print("Shapes of Dx:", np.shape(Dx))
 
     return Dx, Dy, Dz
 

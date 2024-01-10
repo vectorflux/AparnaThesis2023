@@ -4,6 +4,54 @@ import math
 from testcases import *
 
 
+
+
+def getpxyz(xyz):
+
+    px = np.zeros(3)
+    py = np.zeros(3)
+    pz = np.zeros(3)
+
+    x = xyz[0]
+    y = xyz[1]
+    z = xyz[2]
+
+
+        #if i==1:
+            #print("xyz", x,y,z)
+
+    px[0] = (1 - (x ** 2))
+    px[1] = (0 - (x * y))
+    px[2] = (0 - (x * z))
+
+    py[0] = (0 - (x * y))
+    py[1] = (1 - (y ** 2))
+    py[2] = (0 - (y * z))
+
+    pz[0] = (0 - (x * z))
+    pz[1] = (0 - (y * z))
+    pz[2] = (1 - (z ** 2))
+
+    px = px[np.newaxis,:] #row matrix
+    py = py[np.newaxis,:]
+    pz = pz[np.newaxis,:]
+
+    return px, py, pz
+def get_uvwh_r(uvwh,nearest):
+    uvwh_r = np.zeros([len(nearest),4])
+    for n in range(len(nearest)):
+        uvwh_r[n,0] = uvwh[int(nearest[n]),0]
+        uvwh_r[n,1] = uvwh[int(nearest[n]),1]
+        uvwh_r[n,2] = uvwh[int(nearest[n]),2]
+        uvwh_r[n,3] = uvwh[int(nearest[n]),3]
+
+        #print(np.where((np.sum(uvwh_r, axis=1))==0)[0])
+
+
+    return uvwh_r
+
+
+
 def getcartesian(lonlat):
 
     #lat = lonlat[:,1]
@@ -15,7 +63,7 @@ def getcartesian(lonlat):
     lat = np.radians(lonlat[:,1])
 
     # R = 6371229 Radius of earth in meters
-    R = 1.  # radius of unit sphere
+    R = 1.0  # radius of unit sphere
     x = R * np.cos(lat) * np.cos(lon)
     y = R * np.cos(lat) * np.sin(lon)
     z = R * np.sin(lat)
@@ -29,8 +77,11 @@ def eucl_norm(x1,x2):
     return np.linalg.norm(x1-x2)
 
 def getneighcoords(my_list, coords):
-    xyz_r = np.zeros([len(my_list),3])
-    xyz_r[:] = coords[my_list[:]]
+    xyz_r = np.zeros((len(my_list),3))
+    #print("My list:", my_list) 
+    for i in range(len(my_list)):
+        k = int(my_list[i])
+        xyz_r[i,:] = coords[k]
 
     return xyz_r
 
@@ -94,12 +145,23 @@ def cvec2gvec_sphere(uvwh, lon, lat):
         tmp = (z_slt*tmp)
         p_gv[i] = (z_clt*uvwh[i,2]) - tmp
         
-        #v_lon, v_lat, h = test2_fun(lon[i],lat[i])
+        #v_lon, v_lat, h,f = test2_fun(lon[i],lat[i])
+        
+        #diff_u = np.abs(v_lat - p_gu[i])
+        #diff_v = np.abs(v_lon - p_gv[i])
 
-        #if p_gu[i]==v_lat and p_gv[i]==v_lon:
-            #print("yay")
+        #p_gu[i] = v_lat
+        #p_gv[i] = v_lon
+
+        #if diff_u <= 10e-12:
+            #print("yay for u")
+        #else:print("wrong for u")
+        
+        #if diff_v<= 10e-12:
+            #print("yay for v")
+
         #else:
-            #print("***Nay***")
+            #print("wrong for v")
 
         #v_lon[n], v_lat[n], h[n] = test6_fun(lam[n],th[n])
         
@@ -123,6 +185,8 @@ def cvec2gvec_sphere(uvwh, lon, lat):
         #p_gv[i] = (c2s_u[1]*uvwh[i,0]) + (c2s_v[1]*uvwh[i,1]) + (c2s_w[1]*uvwh[i,2])
 
     #print("GeoVelocity:", geovel)
+
+    
     return p_gu, p_gv
 
 def validate_halo_exchange(uvwh,xyz, n_p,ghost):
