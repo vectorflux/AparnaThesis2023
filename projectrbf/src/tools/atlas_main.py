@@ -274,8 +274,17 @@ functionspace.gather(mycoords, lonlat_global)
 lonlat_global_coords = atlas.make_view(lonlat_global)
 
 
+
 if functionspace.part ==0:
     plot_global(uvwh_global,lonlat_global_coords)
+    gidx = atlas.make_view(functionspace.global_index)
+#lonlat = atlas.make_view(functionspace.lonlat)if functionspace.part ==0:    for i in range(functionspace.size):
+    if not ghost[i]:
+        hlocal = uvwh[i,3]
+        hglobal = uvwh_global[gidx[i]-1,3]
+        if not (hlocal == hglobal):
+            print(hlocal, hglobal) 
+
 
 print("Fin.")
 atlas.finalize()
