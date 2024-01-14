@@ -132,8 +132,6 @@ mycoords.halo_exchange()
 
 timeloop_start = time.time()
 
-n_timesteps = 1 #12 days (12 * 86400/1200)
-
 
 #########################################################
 def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost):
@@ -225,6 +223,9 @@ def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost):
 ####################################################################
 ##### TIME STEPPING LOOP #######
 ####################################################################
+
+n_timesteps = 1 #12 days (12 * 86400/1200)
+
 for i in range(n_timesteps):
 
     rk_u = np.zeros((n_p,4))
@@ -275,15 +276,15 @@ lonlat_global_coords = atlas.make_view(lonlat_global)
 
 
 
-if functionspace.part ==0:
-    plot_global(uvwh_global,lonlat_global_coords)
-    gidx = atlas.make_view(functionspace.global_index)
+#if functionspace.part ==0:
+    #plot_global(uvwh_global,lonlat_global_coords)
+    #gidx = atlas.make_view(functionspace.global_index)
 #lonlat = atlas.make_view(functionspace.lonlat)if functionspace.part ==0:    for i in range(functionspace.size):
-    if not ghost[i]:
-        hlocal = uvwh[i,3]
-        hglobal = uvwh_global[gidx[i]-1,3]
-        if not (hlocal == hglobal):
-            print(hlocal, hglobal) 
+    #if not ghost[i]:
+        #hlocal = uvwh[i,3]
+        #hglobal = uvwh_global[gidx[i]-1,3]
+        #if not (hlocal == hglobal):
+            #print(hlocal, hglobal) 
 
 
 print("Fin.")
