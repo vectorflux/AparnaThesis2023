@@ -59,3 +59,11 @@ def wendland1_prime(r):
     else:
         phi_p = 0
     return phi_p
+
+def wendland_3_1_prime(r):
+
+    if (r <= 1):
+        phi_p = 20*(r**4) - 60*(r**3) + 60*(r**2) - 20*r 
+    else:
+        phi_p = 0
+    return phi_p

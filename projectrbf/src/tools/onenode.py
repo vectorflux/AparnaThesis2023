@@ -6,19 +6,21 @@ import atlas4py as atlas
 import numpy as np
 import time
 
+from scipy import linalg
 from operator_matrices import *
+from evaluate_wendland1 import *
 from atlas_func_interface import *
 from read_netcdf_file import *
 from A_matrices import *
 from initializefields import *
 from visualization import *
-from rk4 import *
+#from rk4 import *
 from construct_rhsd import *
 
 
 atlas.initialize() #initializes atlas and MPI
 
-myradius = 0.065 
+myradius = 0.200
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -54,18 +56,23 @@ for i in range(n_p):
 
 index = np.argmin(diff)
 
+print("Node coordinates:\n", xyz[index,:])
+
 nearest = search.nearest_indices_within_radius(index, myradius)
 
 xyz_r = getneighcoords(nearest, xyz)
 
-A, invA = constructA(xyz_r)
+print("Nearest neighbors:\n",xyz_r)
+
+A, invA = constructA(xyz_r,myradius)
+
 
 
 print("A:\n", A)
 print("Determinant of A:", np.linalg.det(A))
 
 Xj = xyz[index]
-Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
+Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
 fields = set_initial_conditions(xyz, n_p, ghost,lonlat)
 
 
@@ -110,13 +117,33 @@ z = xyz[index,2]
 
 uvwh_r = get_uvwh_r(uvwh, nearest)
 
-#u = uvwh_r[:, 0]
+u = uvwh_r[:, 0]
 #v = uvwh_r[:, 1]
 #w = uvwh_r[:,2]
 h = uvwh_r[:, 3]
            #rho = np.sqrt(x**2 +y**2 +((x**2+y**2)/z)**2)
 
 print("h: ",h)
+c = np.matmul(invA,h)
+print("c = invA*h: ",c)
+print("h approximation: ", evaluate_wendland1(c,xyz_r,Xj,myradius) )
+print("h true value: ", uvwh[index,3] )
+
+gradient_j = gradient(c,xyz_r,Xj,myradius)
+print("Unprojected gradient approx:\n", gradient(c,xyz_r,Xj,myradius) )
+
+proj_gradient_j = gradient_j - Xj*np.dot(gradient_j,Xj)
+print("Projected gradient approx 1:\n", g*proj_gradient_j )
+print("Should be zero: ", np.dot(proj_gradient_j,Xj) )
+
+# Not sure why this is in the order of 1.e-5 --> too large
+#print("Node j: ", Xj )
+#print("Component in zonal direction (should be small): ", np.dot( gradient_j, [ -Xj[2], Xj[1], 0 ] ) )
+
+proj_gradient(c,xyz_r,Xj,myradius)
+proj_gradient_j = proj_gradient(c,xyz_r,Xj,myradius)
+print("Projected gradient approx 2:\n", proj_gradient_j )
+print("Is not zero: ", np.dot(proj_gradient_j,Xj) )
 
 r = np.arccos(z)
 vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
@@ -124,7 +151,6 @@ rho = np.linalg.norm(vecnorth)
 vecnorth = vecnorth/rho
 
 ana_gradient = g*(((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R)))
-                #print("yes")
 
 c_ana[0] = vecnorth[0]*(ana_gradient)
 c_ana[1] = vecnorth[1]*(ana_gradient)
@@ -137,19 +163,21 @@ termCz= (Dz)
     #ana_c =
 
 term_c = np.row_stack([termCx,termCy,termCz])
-termC = g*(np.matmul(term_c,h))
 
+#termC = g*(np.matmul(term_c,h))
+termC = g*gradient_j
 px, py, pz = getpxyz(Xj)
 
 
 pxyz = np.row_stack([px,py,pz])
+newtermc = np.dot(pxyz,termC)
+#newtermc = termC - Xj*np.dot(termC,Xj)
 
-newtermc = -np.dot(pxyz,termC)
-#termC[0] = -np.dot(px,termC[0])
+##termC[0] = -np.dot(px,termC[0])
 #termC[1] = -np.dot(py,termC[1])
 #termC[2] = -np.dot(pz,termC[2])
 
-print("Numerical TermC:", newtermc)
+print("Numerical TermC:", newtermc/myradius)
 print("Analytical TermC:", c_ana)
 print("dot product:", np.dot(Xj,c_ana))
 print("dot product numerical:", np.dot(Xj,newtermc))

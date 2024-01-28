@@ -87,7 +87,7 @@ for index in range(n_p):  # n_p
         
         Xj = xyz[index]
         #call function to create gradient operators
-        Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
+        Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
         
         allDx = np.append(allDx, Dx)
         allDy = np.append(allDy, Dy)
