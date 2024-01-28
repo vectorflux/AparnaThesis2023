@@ -164,8 +164,8 @@ termCz= (Dz)
 
 term_c = np.row_stack([termCx,termCy,termCz])
 
-#termC = g*(np.matmul(term_c,h))
-termC = g*gradient_j
+termC = g*(np.matmul(term_c,h))
+#termC = g*gradient_j
 px, py, pz = getpxyz(Xj)
 
 
