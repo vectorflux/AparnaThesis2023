@@ -20,7 +20,7 @@ from construct_rhsd import *
 
 atlas.initialize() #initializes atlas and MPI
 
-myradius = 0.200
+myradius = 0.050
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -126,8 +126,10 @@ h = uvwh_r[:, 3]
 print("h: ",h)
 c = np.matmul(invA,h)
 print("c = invA*h: ",c)
-print("h approximation: ", evaluate_wendland1(c,xyz_r,Xj,myradius) )
+h_approx = evaluate_wendland1(c,xyz_r,Xj,myradius)
+print("h approximation: ", h_approx )
 print("h true value: ", uvwh[index,3] )
+print("h relerr:", abs(h_approx - uvwh[index,3])/abs(uvwh[index,3]) )
 
 gradient_j = gradient(c,xyz_r,Xj,myradius)
 print("Unprojected gradient approx:\n", gradient(c,xyz_r,Xj,myradius) )
@@ -140,22 +142,23 @@ print("Should be zero: ", np.dot(proj_gradient_j,Xj) )
 #print("Node j: ", Xj )
 #print("Component in zonal direction (should be small): ", np.dot( gradient_j, [ -Xj[2], Xj[1], 0 ] ) )
 
-proj_gradient(c,xyz_r,Xj,myradius)
-proj_gradient_j = proj_gradient(c,xyz_r,Xj,myradius)
-print("Projected gradient approx 2:\n", proj_gradient_j )
-print("Is not zero: ", np.dot(proj_gradient_j,Xj) )
+#proj_gradient(c,xyz_r,Xj,myradius)
+#proj_gradient_j = proj_gradient(c,xyz_r,Xj,myradius)
+#print("Projected gradient approx 2:\n", proj_gradient_j )
+#print("Is not zero: ", np.dot(proj_gradient_j,Xj) )
 
 r = np.arccos(z)
 vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
 rho = np.linalg.norm(vecnorth)
 vecnorth = vecnorth/rho
 
-ana_gradient = g*(((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R)))
+ana_gradient = ((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R))
 
 c_ana[0] = vecnorth[0]*(ana_gradient)
 c_ana[1] = vecnorth[1]*(ana_gradient)
 c_ana[2] = vecnorth[2]*(ana_gradient)
 
+c_ana    = g*c_ana   # create analytic TermC
 
 termCx= (Dx)
 termCy= (Dy)
@@ -179,9 +182,14 @@ newtermc = np.dot(pxyz,termC)
 
 print("Numerical TermC:", newtermc/myradius)
 print("Analytical TermC:", c_ana)
+relerr_gradient = np.linalg.norm(newtermc/myradius/g - c_ana/g)/np.linalg.norm(c_ana/g)
+print("relative difference in gradient", relerr_gradient)
+
+print("arc deviation of gradient", np.arccos(np.dot(newtermc/myradius/g,c_ana/g) / (np.linalg.norm(newtermc/myradius/g) * np.linalg.norm(c_ana/g)) ) )
+
 print("dot product:", np.dot(Xj,c_ana))
 print("dot product numerical:", np.dot(Xj,newtermc))
 
-
+print("neighborhood: ", np.shape(xyz_r))
 
 atlas.finalize()

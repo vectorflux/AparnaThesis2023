@@ -26,7 +26,7 @@ def create_neighborhood(r, coords, my_i):
             
     return list
 
-def getrow(row_id, my_list, coords):
+def getrow(row_id, my_list, coords, normalization_factor):
     xyz_r = np.zeros([len(my_list),3])
     xyz_r[:] = coords[my_list[:]]
 
@@ -37,7 +37,7 @@ def getrow(row_id, my_list, coords):
     # elements below and above diagonal                                                                 
     for i in range(n):
         r = eucl_norm(xyz_r[i], coords[row_id])  # sends two tuples and gets the norm back                    
-        data[i] = wendland0(r)
+        data[i] = normalization_factor*wendland1(r)
         # print('r', r, 'data', data[i])
 
     return data
@@ -80,7 +80,7 @@ def getneighcoords(my_list, coords):
 
     return xyz_r
 
-def constructA(xyz_r):
+def constructA(xyz_r,normalization_factor):
 
     n = len(xyz_r)  # gets the size of the matrix
     print("size of A : ", n)
@@ -95,15 +95,16 @@ def constructA(xyz_r):
             #print("Entering 2nd A for loop")
             r = eucl_norm(xyz_r[i], xyz_r[k])  # sends two tuples and gets the norm back
             #print(r)
-            A[i][k] = wendland0(r)
+            A[i][k] = normalization_factor*wendland1(r)
             A[k][i] = A[i][k]
 
     for i in range(n):
-        A[i][i] = wendland0(0)
+        A[i][i] = wendland1(0)
 
         #print("Matrix A: ", A)
         invA = inverta(A)
 
+        return A, invA
         return A, invA
 
 
