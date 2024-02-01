@@ -2,6 +2,7 @@
 
 
 #!/usr/bin/env python3
+import sys
 import atlas4py as atlas
 import numpy as np
 import time
@@ -17,10 +18,11 @@ from visualization import *
 #from rk4 import *
 from construct_rhsd import *
 
+np.set_printoptions(threshold=sys.maxsize)
 
 atlas.initialize() #initializes atlas and MPI
 
-myradius = 0.050
+myradius = 0.100
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -70,6 +72,7 @@ A, invA = constructA(xyz_r,myradius)
 
 print("A:\n", A)
 print("Determinant of A:", np.linalg.det(A))
+print("max(A): ", A.max() )
 
 Xj = xyz[index]
 Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
