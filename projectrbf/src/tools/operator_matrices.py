@@ -3,7 +3,7 @@ from A_matrices import *
 from WuWendland_functions import *
 
 
-def differentiation (inv_A,xyz_r,Xj):
+def differentiation (inv_A,xyz_r,Xj,norm_factor):
 
     # B = [ xk.(Xj*.Xk) -xj ]*{phi'(r(Xj))/r(Xj)}
     # inv_A = inverse of A matrix calculated before
@@ -19,8 +19,8 @@ def differentiation (inv_A,xyz_r,Xj):
     
     for i in range(n):
 
-        r_x = eucl_norm(xyz_r[i,:],Xj)/0.065 #scaling to match wendland functions
-        mult_constant = wendland1_prime(r_x) / r_x
+        r_x = eucl_norm(xyz_r[i,:],Xj)/norm_factor #scaling to match wendland functions
+        mult_constant = wendland1_prime(r_x) / r_x /norm_factor
 
  
         #[1,nrj] = ([1,1]*(np.matmul([1,3],[3,nrj]) - [1,nrj]) * [1,nrj]

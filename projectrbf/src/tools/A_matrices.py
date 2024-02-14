@@ -12,7 +12,7 @@ from WuWendland_functions import *
 from helperfuncs import *
 
 
-def constructA(xyz_r):
+def constructA(xyz_r,norm_factor):
 
         n = len(xyz_r) #gets the size of the matrix
         A = np.zeros((n, n))  #declares a matrix with zeros for the construction of our interpolant matrix A
@@ -27,8 +27,9 @@ def constructA(xyz_r):
             for k in range(n):
                 if k < i :
                     r = eucl_norm(xyz_r[i],xyz_r[k]) #sends two tuples and gets the norm back
-                    r=r/0.065 #scaling to match the Wendland functions
-                    A[i][k] = wendland1(r) #can change as per need
+                    r=r/norm_factor #scaling to match the Wendland functions
+                    A[i][k] = wendland1(r)*norm_factor
+                    #A[i][k] = wendland1(r) #can change as per need
                     A[k][i] = A[i][k]
 
         invA = inverta(A)

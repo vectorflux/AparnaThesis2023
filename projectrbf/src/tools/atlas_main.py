@@ -32,7 +32,7 @@ atlas_start = time.time()
 atlas.initialize() #initializes atlas and MPI
 
 #Constants and Variables
-myradius = 0.065 #can generalize later
+myradius = 0.075#can generalize later
 nrj_size_list = []
 allnearest = []
 allDx = []
@@ -83,11 +83,11 @@ for index in range(n_p):  # n_p
         xyz_r = getneighcoords(nearest, xyz) #Gets the list of neighborhood cartesian coordinates for further use
 
         #call function to create A, A inverse and save them
-        A, invA = constructA(xyz_r)
+        A, invA = constructA(xyz_r,myradius)
         
         Xj = xyz[index]
         #call function to create gradient operators
-        Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
+        Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
         
         allDx = np.append(allDx, Dx)
         allDy = np.append(allDy, Dy)
@@ -224,7 +224,7 @@ def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost):
 ##### TIME STEPPING LOOP #######
 ####################################################################
 
-n_timesteps = 1 #12 days (12 * 86400/1200)
+n_timesteps = 8 #12 days (12 * 86400/1200)
 
 for i in range(n_timesteps):
 
@@ -233,7 +233,7 @@ for i in range(n_timesteps):
     rk_w = np.zeros((n_p,4))
     rk_h = np.zeros((n_p,4))
     
-    dt = 1200 #20 mins
+    dt = 900 #20 mins
     
     uvwh0 = uvwh #store previous time step values
 
@@ -276,8 +276,8 @@ lonlat_global_coords = atlas.make_view(lonlat_global)
 
 
 
-#if functionspace.part ==0:
-    #plot_global(uvwh_global,lonlat_global_coords)
+if functionspace.part ==0:
+    plot_global(uvwh_global,lonlat_global_coords)
     #gidx = atlas.make_view(functionspace.global_index)
 #lonlat = atlas.make_view(functionspace.lonlat)if functionspace.part ==0:    for i in range(functionspace.size):
     #if not ghost[i]:

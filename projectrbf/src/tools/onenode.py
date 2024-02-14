@@ -5,7 +5,7 @@
 import atlas4py as atlas
 import numpy as np
 import time
-
+import pandas as pd
 from operator_matrices import *
 from atlas_func_interface import *
 from read_netcdf_file import *
@@ -18,7 +18,7 @@ from construct_rhsd import *
 
 atlas.initialize() #initializes atlas and MPI
 
-myradius = 0.065 
+myradius = 0.1 
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -52,20 +52,29 @@ for i in range(n_p):
 
 #print("Min:", np.argmin(diff), z[np.argmin(diff)])
 
-index = np.argmin(diff)
+index = 1717
 
 nearest = search.nearest_indices_within_radius(index, myradius)
 
 xyz_r = getneighcoords(nearest, xyz)
 
-A, invA = constructA(xyz_r)
+A, invA = constructA(xyz_r,myradius)
 
+print("Maximum of A:", np.max(A))
+#print("Len of A:", len(A))
+#for i in range(len(A)):
+    #for j in range(len(A)):
+        #print(A[i][j])
+#print("A:\n", A)
+#print("Determinant of A:", np.linalg.det(A))
 
-print("A:\n", A)
-print("Determinant of A:", np.linalg.det(A))
+DF = pd.DataFrame(A)
+
+DF.to_csv("Amatrix.csv")
+
 
 Xj = xyz[index]
-Dx, Dy, Dz = differentiation(invA,xyz_r,Xj)
+Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
 fields = set_initial_conditions(xyz, n_p, ghost,lonlat)
 
 
@@ -116,20 +125,21 @@ uvwh_r = get_uvwh_r(uvwh, nearest)
 h = uvwh_r[:, 3]
            #rho = np.sqrt(x**2 +y**2 +((x**2+y**2)/z)**2)
 
-print("h: ",h)
+#print("h: ",h)
 
 r = np.arccos(z)
 vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
 rho = np.linalg.norm(vecnorth)
 vecnorth = vecnorth/rho
 
-ana_gradient = g*(((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R)))
+ana_gradient = (((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R)))
                 #print("yes")
 
 c_ana[0] = vecnorth[0]*(ana_gradient)
 c_ana[1] = vecnorth[1]*(ana_gradient)
 c_ana[2] = vecnorth[2]*(ana_gradient)
 
+c_ana = g*c_ana
 
 termCx= (Dx)
 termCy= (Dy)
@@ -140,19 +150,25 @@ term_c = np.row_stack([termCx,termCy,termCz])
 termC = g*(np.matmul(term_c,h))
 
 px, py, pz = getpxyz(Xj)
-
+#print("pxyz:", px,py,pz)
 
 pxyz = np.row_stack([px,py,pz])
 
-newtermc = -np.dot(pxyz,termC)
+newtermc1 = np.dot(pxyz,termC)
+newtermc2 = termC - Xj*np.dot(termC,Xj)
+
 #termC[0] = -np.dot(px,termC[0])
 #termC[1] = -np.dot(py,termC[1])
 #termC[2] = -np.dot(pz,termC[2])
 
-print("Numerical TermC:", newtermc)
-print("Analytical TermC:", c_ana)
-print("dot product:", np.dot(Xj,c_ana))
-print("dot product numerical:", np.dot(Xj,newtermc))
+#print("Numerical TermC with pxyz:", newtermc1/myradius)
+#print("Numerical TermC correct:", newtermc2/myradius)
+#print("Analytical TermC:", c_ana)
+##print("dot product:", np.dot(Xj,c_ana))
+#print("dot product of projectors:", np.dot(Xj,pxyz))
+
+
+#print("dot product numerical:", np.dot(Xj,newtermc))
 
 
 

@@ -76,7 +76,7 @@ def construct_rhsd(nrj_size_list, allnearest, uvwh, xyz, allD, ghost):
             px, py, pz = getpxyz(xyz[i,:])
 
 
-            Rh[i] = uvwh[i, 0]*(np.dot(np.transpose(Dnx),h)) + uvwh[i, 1]*(np.dot(np.transpose(Dny),h)) + uvwh[i, 2]*(np.dot(np.transpose(Dnz),h)) + uvwh[i, 3]*(np.dot(np.transpose(Dnx),u) + np.dot(np.transpose(Dny),v)+ np.dot(np.transpose(Dnz),w))
+            Rh[i] = (uvwh[i, 0]*(np.dot(np.transpose(Dnx),h)) + uvwh[i, 1]*(np.dot(np.transpose(Dny),h)) + uvwh[i, 2]*(np.dot(np.transpose(Dnz),h)) + uvwh[i, 3]*(np.dot(np.transpose(Dnx),u) + np.dot(np.transpose(Dny),v)+ np.dot(np.transpose(Dnz),w)))
 
             Ru[i] = -np.dot(px, rhsd)
             Rv[i] = -np.dot(py, rhsd)
