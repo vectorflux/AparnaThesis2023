@@ -37,16 +37,12 @@ def set_initial_conditions(xyz, n_p, ghost,lonlat):
             fields[n,1] = uvw[n,1]
             fields[n,2] = uvw[n,2]
             fields[n,3] = h[n]
-            fields[n,4] = f[n]
 
         else:
             fields[n,0] = 0.
             fields[n,1] = 0.
             fields[n,2] = 0.
             fields[n,3] = 0.
-            fields[n,4] = 0.
 
 
-    return fields
-
-
+    return fields, f
