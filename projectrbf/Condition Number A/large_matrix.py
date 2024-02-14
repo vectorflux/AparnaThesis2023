@@ -2,7 +2,7 @@ import numpy as np
 from scipy import sparse
 from all_functions import *
 
-r = 0.065 # radius of neighborhood on unit sphere
+myradius = 0.100 # radius of neighborhood on unit sphere
 #r = 0.850 # radius of neighborhood on unit sphere
 coords = read_data_netcdf() #Read data from a netcdf file
 
@@ -14,13 +14,13 @@ indptr = [0]
 
 #Main Loop which iterates over all points and calls different functions
 for id in range(coord_size):
-    my_list = create_neighborhood(r, coords, id) #Myimplementation
+    my_list = create_neighborhood(myradius, coords, id) #Myimplementation
 
     #print('my list', my_list)
-    #print(len(my_list))
+    print("row:", id, "neighbors:", len(my_list))
     #print(coords[my_list[id]])
 
-    add_row( data, indices, indptr, my_list, getrow(id, my_list, coords) )
+    add_row( data, indices, indptr, my_list, getrow(id, my_list, coords, myradius) )
     print('***End of loop ', id, 'nonzeros ', len(my_list), '***')
 
 csr_mat = sparse.csr_matrix((data, indices, indptr), shape=(coord_size, coord_size))
@@ -28,7 +28,7 @@ print('*** CSR matrix now constructed ***')
 
 csr_mat = csr_mat.asfptype()
 print('csr_mat', csr_mat)
-sparse.save_npz("icon_R2B1_wendland1_full_matrix.npz", csr_mat)
+sparse.save_npz("icon_R2B4_wendland1_full_matrix.npz", csr_mat)
 
 ew1, ev = sparse.linalg.eigs(csr_mat, which='LM')
 print('max(eigs)', ew1)
@@ -40,6 +40,6 @@ print('min(eigs)', ew2)
 print('***Condition of A ', cond_A, '***')
 
 invA=sparse.linalg.splu(csr_mat)
-#sparse.save_npz("icon_R2B1_wendland1_full_inverse.npz", invA)
+sparse.save_npz("icon_R2B4_wendland1_full_inverse.npz", invA)
 
 

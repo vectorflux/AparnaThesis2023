@@ -2,23 +2,33 @@
 
 
 #!/usr/bin/env python3
+import sys
 import atlas4py as atlas
 import numpy as np
 import time
+
+
+from scipy import linalg
+
 import pandas as pd
+
 from operator_matrices import *
+from evaluate_wendland1 import *
 from atlas_func_interface import *
 from read_netcdf_file import *
 from A_matrices import *
 from initializefields import *
 from visualization import *
-from rk4 import *
+#from rk4 import *
 from construct_rhsd import *
 
+np.set_printoptions(threshold=sys.maxsize)
 
 atlas.initialize() #initializes atlas and MPI
 
-myradius = 0.1 
+
+myradius = 0.100
+
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -54,11 +64,17 @@ for i in range(n_p):
 
 index = 1717
 
+print("Node coordinates:\n", xyz[index,:])
+
 nearest = search.nearest_indices_within_radius(index, myradius)
 
 xyz_r = getneighcoords(nearest, xyz)
 
+
+print("Nearest neighbors:\n",xyz_r)
+
 A, invA = constructA(xyz_r,myradius)
+
 
 print("Maximum of A:", np.max(A))
 #print("Len of A:", len(A))
@@ -68,9 +84,15 @@ print("Maximum of A:", np.max(A))
 #print("A:\n", A)
 #print("Determinant of A:", np.linalg.det(A))
 
+
 DF = pd.DataFrame(A)
 
 DF.to_csv("Amatrix.csv")
+
+
+print("A:\n", A)
+print("Determinant of A:", np.linalg.det(A))
+print("max(A): ", A.max() )
 
 
 Xj = xyz[index]
@@ -119,27 +141,56 @@ z = xyz[index,2]
 
 uvwh_r = get_uvwh_r(uvwh, nearest)
 
-#u = uvwh_r[:, 0]
+u = uvwh_r[:, 0]
 #v = uvwh_r[:, 1]
 #w = uvwh_r[:,2]
 h = uvwh_r[:, 3]
            #rho = np.sqrt(x**2 +y**2 +((x**2+y**2)/z)**2)
 
+
+print("h: ",h)
+c = np.matmul(invA,h)
+print("c = invA*h: ",c)
+h_approx = evaluate_wendland1(c,xyz_r,Xj,myradius)
+print("h approximation: ", h_approx )
+print("h true value: ", uvwh[index,3] )
+print("h relerr:", abs(h_approx - uvwh[index,3])/abs(uvwh[index,3]) )
+
+gradient_j = gradient(c,xyz_r,Xj,myradius)
+print("Unprojected gradient approx:\n", gradient(c,xyz_r,Xj,myradius) )
+
+proj_gradient_j = gradient_j - Xj*np.dot(gradient_j,Xj)
+print("Projected gradient approx 1:\n", g*proj_gradient_j )
+print("Should be zero: ", np.dot(proj_gradient_j,Xj) )
+
+# Not sure why this is in the order of 1.e-5 --> too large
+#print("Node j: ", Xj )
+#print("Component in zonal direction (should be small): ", np.dot( gradient_j, [ -Xj[2], Xj[1], 0 ] ) )
+
+#proj_gradient(c,xyz_r,Xj,myradius)
+#proj_gradient_j = proj_gradient(c,xyz_r,Xj,myradius)
+#print("Projected gradient approx 2:\n", proj_gradient_j )
+#print("Is not zero: ", np.dot(proj_gradient_j,Xj) )
+
 #print("h: ",h)
+
 
 r = np.arccos(z)
 vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
 rho = np.linalg.norm(vecnorth)
 vecnorth = vecnorth/rho
 
-ana_gradient = (((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R)))
-                #print("yes")
+
+ana_gradient = ((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R))
+
 
 c_ana[0] = vecnorth[0]*(ana_gradient)
 c_ana[1] = vecnorth[1]*(ana_gradient)
 c_ana[2] = vecnorth[2]*(ana_gradient)
 
-c_ana = g*c_ana
+
+c_ana    = g*c_ana   # create analytic TermC
+
 
 termCx= (Dx)
 termCy= (Dy)
@@ -147,12 +198,29 @@ termCz= (Dz)
     #ana_c =
 
 term_c = np.row_stack([termCx,termCy,termCz])
-termC = g*(np.matmul(term_c,h))
 
+termC = g*(np.matmul(term_c,h))
+#termC = g*gradient_j
 px, py, pz = getpxyz(Xj)
 #print("pxyz:", px,py,pz)
 
 pxyz = np.row_stack([px,py,pz])
+newtermc = np.dot(pxyz,termC)
+#newtermc = termC - Xj*np.dot(termC,Xj)
+
+##termC[0] = -np.dot(px,termC[0])
+#termC[1] = -np.dot(py,termC[1])
+#termC[2] = -np.dot(pz,termC[2])
+
+print("Numerical TermC:", newtermc/myradius)
+print("Analytical TermC:", c_ana)
+relerr_gradient = np.linalg.norm(newtermc/myradius/g - c_ana/g)/np.linalg.norm(c_ana/g)
+print("relative difference in gradient", relerr_gradient)
+
+print("arc deviation of gradient", np.arccos(np.dot(newtermc/myradius/g,c_ana/g) / (np.linalg.norm(newtermc/myradius/g) * np.linalg.norm(c_ana/g)) ) )
+
+print("dot product:", np.dot(Xj,c_ana))
+print("dot product numerical:", np.dot(Xj,newtermc))
 
 newtermc1 = np.dot(pxyz,termC)
 newtermc2 = termC - Xj*np.dot(termC,Xj)
@@ -171,5 +239,6 @@ newtermc2 = termC - Xj*np.dot(termC,Xj)
 #print("dot product numerical:", np.dot(Xj,newtermc))
 
 
+print("neighborhood: ", np.shape(xyz_r))
 
 atlas.finalize()
