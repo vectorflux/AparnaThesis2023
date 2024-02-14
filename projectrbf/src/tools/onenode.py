@@ -7,7 +7,11 @@ import atlas4py as atlas
 import numpy as np
 import time
 
+
 from scipy import linalg
+
+import pandas as pd
+
 from operator_matrices import *
 from evaluate_wendland1 import *
 from atlas_func_interface import *
@@ -22,7 +26,9 @@ np.set_printoptions(threshold=sys.maxsize)
 
 atlas.initialize() #initializes atlas and MPI
 
+
 myradius = 0.100
+
 lonlat = read_data_netcdf()
 grid = atlas.UnstructuredGrid(lonlat[:, 0], lonlat[:, 1]) #Create Unstructured Grid
 
@@ -56,7 +62,7 @@ for i in range(n_p):
 
 #print("Min:", np.argmin(diff), z[np.argmin(diff)])
 
-index = np.argmin(diff)
+index = 1717
 
 print("Node coordinates:\n", xyz[index,:])
 
@@ -64,15 +70,30 @@ nearest = search.nearest_indices_within_radius(index, myradius)
 
 xyz_r = getneighcoords(nearest, xyz)
 
+
 print("Nearest neighbors:\n",xyz_r)
 
 A, invA = constructA(xyz_r,myradius)
 
 
+print("Maximum of A:", np.max(A))
+#print("Len of A:", len(A))
+#for i in range(len(A)):
+    #for j in range(len(A)):
+        #print(A[i][j])
+#print("A:\n", A)
+#print("Determinant of A:", np.linalg.det(A))
+
+
+DF = pd.DataFrame(A)
+
+DF.to_csv("Amatrix.csv")
+
 
 print("A:\n", A)
 print("Determinant of A:", np.linalg.det(A))
 print("max(A): ", A.max() )
+
 
 Xj = xyz[index]
 Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
@@ -126,6 +147,7 @@ u = uvwh_r[:, 0]
 h = uvwh_r[:, 3]
            #rho = np.sqrt(x**2 +y**2 +((x**2+y**2)/z)**2)
 
+
 print("h: ",h)
 c = np.matmul(invA,h)
 print("c = invA*h: ",c)
@@ -150,18 +172,25 @@ print("Should be zero: ", np.dot(proj_gradient_j,Xj) )
 #print("Projected gradient approx 2:\n", proj_gradient_j )
 #print("Is not zero: ", np.dot(proj_gradient_j,Xj) )
 
+#print("h: ",h)
+
+
 r = np.arccos(z)
 vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
 rho = np.linalg.norm(vecnorth)
 vecnorth = vecnorth/rho
 
+
 ana_gradient = ((h0*np.pi)/(2*R))*(-np.sin((np.pi*r)/R))
+
 
 c_ana[0] = vecnorth[0]*(ana_gradient)
 c_ana[1] = vecnorth[1]*(ana_gradient)
 c_ana[2] = vecnorth[2]*(ana_gradient)
 
+
 c_ana    = g*c_ana   # create analytic TermC
+
 
 termCx= (Dx)
 termCy= (Dy)
@@ -173,7 +202,7 @@ term_c = np.row_stack([termCx,termCy,termCz])
 termC = g*(np.matmul(term_c,h))
 #termC = g*gradient_j
 px, py, pz = getpxyz(Xj)
-
+#print("pxyz:", px,py,pz)
 
 pxyz = np.row_stack([px,py,pz])
 newtermc = np.dot(pxyz,termC)
@@ -192,6 +221,23 @@ print("arc deviation of gradient", np.arccos(np.dot(newtermc/myradius/g,c_ana/g)
 
 print("dot product:", np.dot(Xj,c_ana))
 print("dot product numerical:", np.dot(Xj,newtermc))
+
+newtermc1 = np.dot(pxyz,termC)
+newtermc2 = termC - Xj*np.dot(termC,Xj)
+
+#termC[0] = -np.dot(px,termC[0])
+#termC[1] = -np.dot(py,termC[1])
+#termC[2] = -np.dot(pz,termC[2])
+
+#print("Numerical TermC with pxyz:", newtermc1/myradius)
+#print("Numerical TermC correct:", newtermc2/myradius)
+#print("Analytical TermC:", c_ana)
+##print("dot product:", np.dot(Xj,c_ana))
+#print("dot product of projectors:", np.dot(Xj,pxyz))
+
+
+#print("dot product numerical:", np.dot(Xj,newtermc))
+
 
 print("neighborhood: ", np.shape(xyz_r))
 
