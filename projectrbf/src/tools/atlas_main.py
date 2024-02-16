@@ -32,7 +32,7 @@ atlas_start = time.time()
 atlas.initialize() #initializes atlas and MPI
 
 #Constants and Variables
-myradius = 0.075#can generalize later
+myradius = 0.100   #can generalize later
 nrj_size_list = []
 allnearest = []
 allDx = []
@@ -186,7 +186,7 @@ def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost):
 ##### TIME STEPPING LOOP #######
 ####################################################################
 
-n_timesteps = 1 #12 days (12 * 86400/dt)
+n_timesteps = 24  #12 days (12 * 86400/dt)
 
 for i in range(n_timesteps):
 

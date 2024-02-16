@@ -38,17 +38,18 @@ def construct_rhsd_vector(nrj_size_list, allnearest, normalization_factor, uvwh,
             w = uvwh_r[:, 2]
             h = uvwh_r[:, 3]
 
+            # In my mind, there should be a normalization factor here, since A does not include it
             termA[0] = (uvwh[i,0]*(np.dot(np.transpose(Dnx),u)) +
                  uvwh[i,1]*(np.dot(np.transpose(Dny),u)) +
-                 uvwh[i,2]*(np.dot(np.transpose(Dnz),u)))
+                 uvwh[i,2]*(np.dot(np.transpose(Dnz),u))) / normalization_factor
 
             termA[1] = (uvwh[i, 0] * (np.dot(np.transpose(Dnx), v)) +
                        uvwh[i, 1] * (np.dot(np.transpose(Dny), v)) +
-                       uvwh[i, 2] * (np.dot(np.transpose(Dnz), v)))
+                       uvwh[i, 2] * (np.dot(np.transpose(Dnz), v))) / normalization_factor
 
             termA[2] = (uvwh[i, 0] * (np.dot(np.transpose(Dnx), w)) +
                     uvwh[i, 1] * (np.dot(np.transpose(Dny), w)) +
-                    uvwh[i, 2] * (np.dot(np.transpose(Dnz), w)))
+                    uvwh[i, 2] * (np.dot(np.transpose(Dnz), w))) / normalization_factor
 
             #f. [3,1]
             termB[0] = f[i]*((xyz[i,1]*uvwh[i,2]) - (xyz[i,2]*uvwh[i,1]))
@@ -61,8 +62,22 @@ def construct_rhsd_vector(nrj_size_list, allnearest, normalization_factor, uvwh,
             termCz= np.transpose(Dnz)
 
             term_c = np.row_stack([termCx,termCy,termCz])
-            termC = g*(np.dot(term_c,h))
-
+            termC = g*(np.dot(term_c,h))/normalization_factor   # normalize to myradius since this is not in the A matrix
+            
+#
+# Calculate the analytical gradient before the first time step:
+#
+            h0 = 1000/6371000
+            R_blob = 1.0/3
+            c_ana = np.zeros(3)
+            x = xyz[i,0]
+            y = xyz[i,1]
+            z = xyz[i,2]
+            r = np.arccos(z)
+            vecnorth = np.array([-x, -y, ((x**2 +y**2)/z) ])
+            rho = np.linalg.norm(vecnorth)
+            vecnorth = vecnorth/rho
+            
             rhsd[0] = termA[0] + (termB[0]) + (termC[0])
             rhsd[1] = termA[1] + (termB[1]) + (termC[1])
             rhsd[2] = termA[2] + (termB[2]) + (termC[2])
@@ -70,6 +85,19 @@ def construct_rhsd_vector(nrj_size_list, allnearest, normalization_factor, uvwh,
             #Get px, py, pz at the node where we are calculating
             px, py, pz = getpxyz(xyz[i,:])
 
+            pxyz = np.row_stack([px,py,pz])
+            projected_termc = np.dot(pxyz,termC)   
+
+            # This is the relative error in the gradient
+            if r < R_blob :
+                ana_gradient = ((h0*np.pi)/(2*R_blob))*(-np.sin((np.pi*r)/R_blob))
+                c_ana[0] = vecnorth[0]*(ana_gradient)
+                c_ana[1] = vecnorth[1]*(ana_gradient)
+                c_ana[2] = vecnorth[2]*(ana_gradient)
+                relerr_gradient = np.linalg.norm(projected_termc/g - c_ana)/np.linalg.norm(c_ana)
+#                print("i= ", i, "calculated gradient ", projected_termc/g, " c_ana ", c_ana )
+#                print("i= ", i, "relative difference in gradient", relerr_gradient)
+            
 
             R[i,0] = -np.dot(px, rhsd)
             R[i,1] = -np.dot(py, rhsd)

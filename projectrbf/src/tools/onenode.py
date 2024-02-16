@@ -203,19 +203,19 @@ px, py, pz = getpxyz(Xj)
 #print("pxyz:", px,py,pz)
 
 pxyz = np.row_stack([px,py,pz])
-newtermc = np.dot(pxyz,termC)
+newtermc = np.dot(pxyz,termC)/myradius   # normalize here, since normalization factor not in matrix
 #newtermc = termC - Xj*np.dot(termC,Xj)
 
 ##termC[0] = -np.dot(px,termC[0])
 #termC[1] = -np.dot(py,termC[1])
 #termC[2] = -np.dot(pz,termC[2])
 
-print("Numerical TermC:", newtermc/myradius)
+print("Numerical TermC:", newtermc)
 print("Analytical TermC:", c_ana)
-relerr_gradient = np.linalg.norm(newtermc/myradius/g - c_ana/g)/np.linalg.norm(c_ana/g)
+relerr_gradient = np.linalg.norm(newtermc/g - c_ana/g)/np.linalg.norm(c_ana/g)
 print("relative difference in gradient", relerr_gradient)
 
-print("arc deviation of gradient", np.arccos(np.dot(newtermc/myradius/g,c_ana/g) / (np.linalg.norm(newtermc/myradius/g) * np.linalg.norm(c_ana/g)) ) )
+print("arc deviation of gradient", np.arccos(np.dot(newtermc/g,c_ana/g) / (np.linalg.norm(newtermc/g) * np.linalg.norm(c_ana/g)) ) )
 
 print("dot product:", np.dot(Xj,c_ana))
 print("dot product numerical:", np.dot(Xj,newtermc))
