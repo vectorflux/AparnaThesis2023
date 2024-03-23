@@ -40,6 +40,4 @@ print('min(eigs)', ew2)
 print('***Condition of A ', cond_A, '***')
 
 invA=sparse.linalg.splu(csr_mat)
-sparse.save_npz("icon_R2B4_wendland1_full_inverse.npz", invA)
-
-
+#sparse.save_npz("icon_R2B4_wendland1_full_inverse.npz", invA)
