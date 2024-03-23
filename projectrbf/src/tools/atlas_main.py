@@ -32,7 +32,7 @@ atlas_start = time.time()
 atlas.initialize() #initializes atlas and MPI
 
 #Constants and Variables
-myradius = 0.100   #can generalize later
+myradius = 0.200   #can generalize later
 nrj_size_list = []
 allnearest = []
 allDx = []
@@ -75,7 +75,7 @@ initloop_start = time.time()
 ###################  Loop to construct RBF Operator matrice  ############################
 initloop_start = time.time()
 for index in range(n_p):  # n_p
-    if ghost[index] == 0:
+#    if ghost[index] == 0:
         
         nearest = search.nearest_indices_within_radius(index, myradius)
         allnearest = np.append(allnearest, nearest)
@@ -186,21 +186,23 @@ def get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost):
 ##### TIME STEPPING LOOP #######
 ####################################################################
 
-n_timesteps = 24  #12 days (12 * 86400/dt)
+n_timesteps = 12 #  1/12 days (12 * 86400/dt)
 
+dt = 600 # 10 mins
+    
 for i in range(n_timesteps):
 
-    dt = 900 # 15 mins
-    
+    print("Time step ", i)
     d1, d2, d3, d4 = get_rk4_values(uvwh, dt, nrj_size_list, allnearest,xyz, allD, ghost)
     
     drhs = ((d1 + d4) + 2*(d2+d3))/6
-    plot_global(drhs,lonlat)
     for k in range(n_p):
         if not ghost[k]:
         
             #Calculate uvwh at next timestep (overwriting): need all RHS values
             uvwh[k,:] += drhs[k,:]
+
+    plot_global(uvwh,lonlat)
 
     #Update values after each time step (Halo exchange)
     myfield.halo_dirty = True
@@ -226,8 +228,6 @@ mc = mycoords.functionspace
 lonlat_global = mc.create_field_global(variables=2)
 functionspace.gather(mycoords, lonlat_global)
 lonlat_global_coords = atlas.make_view(lonlat_global)
-
-
 
 if functionspace.part ==0:
     plot_global( uvwh, lonlat )   # plot initial conditions

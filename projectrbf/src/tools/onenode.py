@@ -203,7 +203,7 @@ px, py, pz = getpxyz(Xj)
 #print("pxyz:", px,py,pz)
 
 pxyz = np.row_stack([px,py,pz])
-newtermc = np.dot(pxyz,termC)/myradius   # normalize here, since normalization factor not in matrix
+newtermc = np.dot(pxyz,termC)
 #newtermc = termC - Xj*np.dot(termC,Xj)
 
 ##termC[0] = -np.dot(px,termC[0])

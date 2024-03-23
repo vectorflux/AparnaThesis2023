@@ -62,8 +62,10 @@ def construct_rhsd_vector(nrj_size_list, allnearest, normalization_factor, uvwh,
             termCz= np.transpose(Dnz)
 
             term_c = np.row_stack([termCx,termCy,termCz])
-            termC = g*(np.dot(term_c,h))/normalization_factor   # normalize to myradius since this is not in the A matrix
+# TODO : explain why this has to be a minus sign
+            termC = -g*(np.dot(term_c,h))/normalization_factor   # normalize to myradius since this is not in the A matrix
             
+            # print("size of termC ", termC.shape )
 #
 # Calculate the analytical gradient before the first time step:
 #
@@ -102,7 +104,6 @@ def construct_rhsd_vector(nrj_size_list, allnearest, normalization_factor, uvwh,
             R[i,0] = -np.dot(px, rhsd)
             R[i,1] = -np.dot(py, rhsd)
             R[i,2] = -np.dot(pz, rhsd)
-
             R[i,3] = (uvwh[i, 0]*(np.dot(np.transpose(Dnx),h)) + uvwh[i, 1]*(np.dot(np.transpose(Dny),h)) + uvwh[i, 2]*(np.dot(np.transpose(Dnz),h)) + uvwh[i, 3]*(np.dot(np.transpose(Dnx),u) + np.dot(np.transpose(Dny),v)+ np.dot(np.transpose(Dnz),w)))
 
     return R
