@@ -19,7 +19,7 @@ def plot_global(uvwh, lonlat):
     v_lon = np.zeros(N)
     v_lat = np.zeros(N)
     
-    #print("length of xyz: ", len(xyz))
+    print("length of xyz: ", len(xyz))
     x = xyz[:,0]
     y = xyz[:,1]
     z = xyz[:,2]
@@ -42,7 +42,7 @@ def plot_global(uvwh, lonlat):
     ax.set_zlabel('Z')
     ax.set_title('Geopotential height' )  
     plt.savefig('height.png')
-    #plt.show()
+    plt.show()
     plt.close()
 
     fig = plt.figure()
@@ -55,7 +55,7 @@ def plot_global(uvwh, lonlat):
     ax.set_zlabel('Z')
     ax.set_title('Zonal velocity' )
     plt.savefig('zonal.png')
-    #plt.show()
+    plt.show()
     plt.close()
     
     fig = plt.figure()
@@ -68,7 +68,7 @@ def plot_global(uvwh, lonlat):
     ax.set_zlabel('Z')
     ax.set_title('Meridional Velocity' )
     plt.savefig('meri.png')
-    #plt.show()
+    plt.show()
     plt.close()
 
 

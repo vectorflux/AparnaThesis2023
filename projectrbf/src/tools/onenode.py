@@ -43,7 +43,7 @@ remote_index = atlas.make_view(functionspace.remote_index) # local index on part
 global_index = atlas.make_view(functionspace.global_index) # global index across partitions (always 1-based)
 xyz = getcartesian(lonlat)
 
-myfield = functionspace.create_field(name="swe_variables", variables=5, dtype = np.float64)
+myfield = functionspace.create_field(name="swe_variables", variables=4, dtype = np.float64)
 uvwh = atlas.make_view(myfield)
 
 mycoords = functionspace.create_field(name="lonlat", variables=2, dtype = np.float64)
@@ -97,7 +97,7 @@ print("max(A): ", A.max() )
 
 Xj = xyz[index]
 Dx, Dy, Dz = differentiation(invA,xyz_r,Xj,myradius)
-fields = set_initial_conditions(xyz, n_p, ghost,lonlat)
+fields, f = set_initial_conditions(xyz, n_p, ghost,lonlat)
 
 
 #fill values in the functionspace variables
@@ -110,7 +110,6 @@ for n in range(n_p):
     uvwh[n,1] = fields[n,1]
     uvwh[n,2] = fields[n,2]
     uvwh[n,3] = fields[n,3]
-    uvwh[n,4] = fields[n,4]
 
   else:
      lonlat_sd[n,0] = lonlat[n,1] = 0.0
@@ -118,7 +117,6 @@ for n in range(n_p):
      uvwh[n,1] = 0.0
      uvwh[n,2] = 0.0
      uvwh[n,3] = 0.0
-     uvwh[n,4] = 0.0
 
 myfield.halo_dirty = True
 myfield.halo_exchange()
@@ -212,12 +210,12 @@ newtermc = np.dot(pxyz,termC)
 #termC[1] = -np.dot(py,termC[1])
 #termC[2] = -np.dot(pz,termC[2])
 
-print("Numerical TermC:", newtermc/myradius)
+print("Numerical TermC:", newtermc)
 print("Analytical TermC:", c_ana)
-relerr_gradient = np.linalg.norm(newtermc/myradius/g - c_ana/g)/np.linalg.norm(c_ana/g)
+relerr_gradient = np.linalg.norm(newtermc/g - c_ana/g)/np.linalg.norm(c_ana/g)
 print("relative difference in gradient", relerr_gradient)
 
-print("arc deviation of gradient", np.arccos(np.dot(newtermc/myradius/g,c_ana/g) / (np.linalg.norm(newtermc/myradius/g) * np.linalg.norm(c_ana/g)) ) )
+print("arc deviation of gradient", np.arccos(np.dot(newtermc/g,c_ana/g) / (np.linalg.norm(newtermc/g) * np.linalg.norm(c_ana/g)) ) )
 
 print("dot product:", np.dot(Xj,c_ana))
 print("dot product numerical:", np.dot(Xj,newtermc))

@@ -36,8 +36,24 @@ def getrow(row_id, my_list, coords, normalization_factor):
 
     # elements below and above diagonal                                                                 
     for i in range(n):
-        r = eucl_norm(xyz_r[i], coords[row_id])  # sends two tuples and gets the norm back                    
-        data[i] = normalization_factor*wendland1(r)
+        r = eucl_norm(xyz_r[i], coords[row_id])/normalization_factor  # distance mapped onto Wendland [0,1]   
+        data[i] = wendland1(r)                                        # map back to unit sphere space
+        # print('r', r, 'data', data[i])
+
+    return data
+
+def getrow_derivative(row_id, my_list, coords, normalization_factor):
+    xyz_r = np.zeros([len(my_list),3])
+    xyz_r[:] = coords[my_list[:]]
+
+    data = np.zeros([len(my_list)])
+    n = len(xyz_r)  # gets the size of the matrix
+    print("non-zeros in row : ", n)
+
+    # elements below and above diagonal
+    for i in range(n):
+        r = eucl_norm(xyz_r[i], coords[row_id])/normalization_factor  # sends two tuples and gets the norm back
+        data[i] = normalization_factor*wendland1_prime(r) / ( r * normalization_factor * normalization_factor )
         # print('r', r, 'data', data[i])
 
     return data
